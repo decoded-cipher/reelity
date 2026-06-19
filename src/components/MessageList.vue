@@ -10,7 +10,10 @@ const emit = defineEmits<{ remix: [text: string] }>();
 const scroller = ref<HTMLElement>();
 
 watch(
-  () => props.messages.map((m) => `${m.id}:${m.job?.status}:${m.job?.progress}`).join("|"),
+  () =>
+    props.messages
+      .map((m) => `${m.id}:${m.job?.status}:${m.job?.progress}:${m.pending}:${m.text ? 1 : 0}`)
+      .join("|"),
   async () => {
     await nextTick();
     scroller.value?.scrollTo({ top: scroller.value.scrollHeight, behavior: "smooth" });
@@ -56,7 +59,15 @@ function remix(i: number) {
         </div>
 
         <div v-else class="flex justify-start">
-          <ProgressSteps v-if="running(m)" :job="m.job!" />
+          <div
+            v-if="m.pending"
+            class="flex items-center gap-1 rounded-2xl rounded-bl-md bg-zinc-800/70 px-4 py-3.5"
+          >
+            <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:0ms]" />
+            <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:150ms]" />
+            <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:300ms]" />
+          </div>
+          <ProgressSteps v-else-if="running(m)" :job="m.job!" />
           <VideoCard
             v-else-if="m.job && m.job.status === 'done'"
             :job="m.job"
@@ -67,6 +78,12 @@ function remix(i: number) {
             class="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200"
           >
             Couldn't build that reel — {{ m.job.error }}
+          </div>
+          <div
+            v-else-if="m.text"
+            class="max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-zinc-800/70 px-4 py-2.5 text-sm leading-relaxed text-zinc-100"
+          >
+            {{ m.text }}
           </div>
         </div>
       </template>

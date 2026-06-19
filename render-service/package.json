@@ -1,0 +1,24 @@
+{
+  "name": "reelity-render-service",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts UgcVideo out/reelity.mp4",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@remotion/gif": "4.0.481",
+    "@remotion/google-fonts": "4.0.481",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "remotion": "4.0.481",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@remotion/cli": "4.0.481",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "typescript": "^6.0.3"
+  }
+}

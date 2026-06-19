@@ -8,6 +8,7 @@ const text = ref("");
 const area = ref<HTMLTextAreaElement>();
 
 const EXAMPLES = [
+  "What can you do?",
   "I'm building CalAI, a calorie-tracking app: calai.app",
   "Notion but for plumbers — pipeline.app",
   "DripCheck, an AI stylist for your closet: dripcheck.io",
@@ -60,7 +61,7 @@ function resize() {
           v-model="text"
           rows="1"
           :disabled="busy"
-          placeholder="Describe your product and drop a link…"
+          placeholder="Message Reelity… or describe your product and drop a link"
           class="max-h-48 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none disabled:opacity-50"
           @input="resize"
           @keydown="onKeydown"

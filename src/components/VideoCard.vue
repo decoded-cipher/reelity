@@ -117,7 +117,7 @@ async function copy() {
 
       <div class="flex min-w-0 flex-1 flex-col">
         <div class="text-[11px] font-semibold uppercase tracking-wider text-violet-300">
-          {{ spec?.template }} · {{ spec?.productName }}
+          UGC reel · {{ spec?.productName }}
         </div>
         <p class="mt-1 text-sm leading-snug text-zinc-200">{{ job.concept }}</p>
 

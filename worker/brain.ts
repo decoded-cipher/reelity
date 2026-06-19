@@ -4,9 +4,6 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { Caption, RenderSpec } from "../src/lib/types";
 import type { SiteContext } from "./scrape";
 
-const TEMPLATES = ["pov", "rating", "nobody", "beforeafter", "listicle"] as const;
-type Template = (typeof TEMPLATES)[number];
-
 const DEFAULTS = {
   anthropic: "claude-opus-4-8",
   google: "gemini-2.0-flash",
@@ -39,7 +36,7 @@ export async function buildSpec(
   return heuristicSpec(message, site);
 }
 
-function sdkModel(env: Env): LanguageModel | null {
+export function sdkModel(env: Env): LanguageModel | null {
   const id = env.BRAIN_MODEL;
   const make = {
     anthropic: () => createAnthropic({ apiKey: env.ANTHROPIC_API_KEY })(id || DEFAULTS.anthropic),
@@ -60,7 +57,7 @@ type TextAI = {
   ): Promise<{ response?: string }>;
 };
 
-async function workersAi(env: Env, system: string, user: string): Promise<string> {
+export async function workersAi(env: Env, system: string, user: string): Promise<string> {
   const ai = env.AI as unknown as TextAI;
   const out = await ai.run(env.WORKERS_AI_MODEL || DEFAULTS.workersAi, {
     messages: [
@@ -75,12 +72,11 @@ async function workersAi(env: Env, system: string, user: string): Promise<string
 function buildPrompt(message: string, site: SiteContext | null) {
   const system = [
     "You are a viral short-form video scriptwriter for TikTok, Reels, and Shorts.",
-    "Given a product, design ONE 5-8 second vertical UGC-style video that is genuinely funny or clever and feels native to current short-form trends — the kind a creator would actually post and people would screenshot.",
+    "Given a product, design ONE 8-12 second vertical UGC-style video that is genuinely funny or clever and feels native to current short-form trends — the kind a creator would actually post and people would screenshot.",
     "You do not generate footage. You ORGANIZE four layers: a background b-roll clip, kinetic on-screen captions, a trending-style audio vibe, and a reaction GIF that is the punchline. The GIF must land the joke.",
     "",
     "Reply with ONLY a single minified JSON object — no markdown, no code fences, no commentary. Shape:",
-    '{"template": one of ["pov","rating","nobody","beforeafter","listicle"],',
-    '"productName": string, "siteUrl": string,',
+    '{"productName": string, "siteUrl": string,',
     '"concept": one sentence describing the bit,',
     '"caption": [{"text": short on-screen line, "startMs": int, "endMs": int}],',
     '"pexelsQuery": 2-4 words for the background clip,',
@@ -88,7 +84,8 @@ function buildPrompt(message: string, site: SiteContext | null) {
     '"audioVibe": short phrase for the trending audio mood,',
     '"accentColor": "#RRGGBB" matching the brand}',
     "",
-    "Rules: 3 to 4 caption beats. Each line punchy (max ~6 words). Times in milliseconds, non-overlapping, covering roughly 0 to 6000. Lowercase trendy phrasing and at most one emoji per line are fine. Make the humor specific to THIS product — reference what it actually does. No corporate slogans, no generic hype.",
+    "Build the captions as an arc: a scroll-stopping hook, one or two escalating lines, then the FINAL beat is the punchline — the reaction GIF lands on that last line.",
+    "Rules: 3 to 5 caption beats. Each line punchy (max ~6 words). Times in milliseconds, non-overlapping, roughly 0 to 10000. Lowercase trendy phrasing and at most one emoji per line are fine. Make the humor specific to THIS product — reference what it actually does. No corporate slogans, no generic hype.",
   ].join("\n");
 
   const user = [`Founder's pitch: "${message}"`, "", siteSummary(site), "", "Write the video."].join("\n");
@@ -119,7 +116,6 @@ function coerceSpec(raw: string, message: string, site: SiteContext | null): Ren
   const url = str(json.siteUrl) || site?.url || (site?.host ? `https://${site.host}` : "");
   const themeHex = site?.themeColor ? hex(site.themeColor) : undefined;
   return {
-    template: TEMPLATES.includes(json.template as Template) ? (json.template as Template) : "pov",
     productName: name,
     siteUrl: url,
     concept: str(json.concept) || `${name} UGC reel`,
@@ -189,7 +185,7 @@ const hex = (v: unknown) =>
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
-function beats(lines: string[], totalMs = 6000): Caption[] {
+function beats(lines: string[], totalMs = 9000): Caption[] {
   const each = Math.round(totalMs / lines.length);
   return lines.map((text, i) => ({ text, startMs: i * each, endMs: (i + 1) * each }));
 }
@@ -198,7 +194,6 @@ type Concept = (name: string, url: string, host: string) => RenderSpec;
 
 const CONCEPTS: Concept[] = [
   (name, url) => ({
-    template: "pov",
     productName: name,
     siteUrl: url,
     concept: `POV: you finally found ${name} after trying every other app`,
@@ -214,7 +209,6 @@ const CONCEPTS: Concept[] = [
     accentColor: "#a855f7",
   }),
   (name, url, host) => ({
-    template: "nobody",
     productName: name,
     siteUrl: url,
     concept: `"nobody: … ${name} users:" flex meme`,
@@ -230,7 +224,6 @@ const CONCEPTS: Concept[] = [
     accentColor: "#ec4899",
   }),
   (name, url, host) => ({
-    template: "rating",
     productName: name,
     siteUrl: url,
     concept: `rating apps until I hit a 10/10 — spoiler, it's ${name}`,

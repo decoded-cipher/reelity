@@ -2,7 +2,7 @@
 import { ref, computed } from "vue";
 import { nanoid } from "nanoid";
 import type { ChatMessage } from "../lib/types";
-import { generate } from "../lib/api";
+import { send as sendMessage } from "../lib/api";
 import MessageList from "./MessageList.vue";
 import Composer from "./Composer.vue";
 
@@ -16,20 +16,20 @@ async function send(text: string) {
   busy.value = true;
 
   messages.value.push({ id: nanoid(), role: "user", text, createdAt: Date.now() });
-  const reply: ChatMessage = {
-    id: nanoid(),
-    role: "assistant",
-    job: { id: "", status: "queued", progress: 0 },
-    createdAt: Date.now(),
-  };
-  messages.value.push(reply);
+  messages.value.push({ id: nanoid(), role: "assistant", pending: true, createdAt: Date.now() });
+  const live = messages.value[messages.value.length - 1];
 
   try {
-    reply.job = await generate(text, (job) => {
-      reply.job = job;
+    const result = await sendMessage(text, (job) => {
+      live.pending = false;
+      live.job = job;
     });
+    if (result.kind === "reply") live.text = result.text;
+    else live.job = result.job;
+    live.pending = false;
   } catch (e) {
-    reply.job = { id: nanoid(), status: "failed", progress: 0, error: (e as Error).message };
+    live.pending = false;
+    live.job = { id: nanoid(), status: "failed", progress: 0, error: (e as Error).message };
   } finally {
     busy.value = false;
   }
