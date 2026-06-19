@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed } from "vue";
 import type { Job } from "../lib/types";
 
 const props = defineProps<{ job: Job }>();
@@ -7,7 +7,7 @@ const emit = defineEmits<{ remix: [] }>();
 
 const spec = computed(() => props.job.spec);
 const assets = computed(() => props.job.assets);
-const captions = computed(() => spec.value?.caption ?? []);
+const caption = computed(() => spec.value?.caption ?? "");
 const accent = computed(() => spec.value?.accentColor ?? "#a855f7");
 const gradient = computed(() => `radial-gradient(circle at 30% 20%, ${accent.value}, #0b0b12 72%)`);
 
@@ -39,15 +39,6 @@ const layers = computed(() => [
     src: audio.value ? "Openverse" : "",
   },
 ]);
-
-const idx = ref(0);
-let timer: number | undefined;
-onMounted(() => {
-  timer = window.setInterval(() => {
-    if (captions.value.length) idx.value = (idx.value + 1) % captions.value.length;
-  }, 1500);
-});
-onBeforeUnmount(() => clearInterval(timer));
 
 const copied = ref(false);
 async function copy() {
@@ -94,12 +85,11 @@ async function copy() {
             </div>
           </div>
 
-          <div class="absolute inset-x-2 top-1/2 -translate-y-1/2 text-center">
+          <div class="absolute inset-x-2 top-[15%] text-center">
             <div
-              :key="idx"
-              class="anim-pop text-balance text-sm font-black uppercase leading-tight text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]"
+              class="text-balance text-xs font-black lowercase leading-tight text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_0.9),_0_0_4px_rgb(0_0_0_/_0.9)]"
             >
-              {{ captions[idx]?.text }}
+              {{ caption }}
             </div>
           </div>
 
@@ -117,7 +107,7 @@ async function copy() {
 
       <div class="flex min-w-0 flex-1 flex-col">
         <div class="text-[11px] font-semibold uppercase tracking-wider text-violet-300">
-          UGC reel · {{ spec?.productName }}
+          {{ spec?.format }} reel · {{ spec?.productName }}
         </div>
         <p class="mt-1 text-sm leading-snug text-zinc-200">{{ job.concept }}</p>
 

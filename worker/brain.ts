@@ -1,7 +1,7 @@
 import { generateText, type LanguageModel } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import type { Caption, RenderSpec } from "../src/lib/types";
+import type { RenderSpec } from "../src/lib/types";
 import type { SiteContext } from "./scrape";
 
 const DEFAULTS = {
@@ -72,20 +72,23 @@ export async function workersAi(env: Env, system: string, user: string): Promise
 function buildPrompt(message: string, site: SiteContext | null) {
   const system = [
     "You are a viral short-form video scriptwriter for TikTok, Reels, and Shorts.",
-    "Given a product, design ONE 8-12 second vertical UGC-style video that is genuinely funny or clever and feels native to current short-form trends — the kind a creator would actually post and people would screenshot.",
-    "You do not generate footage. You ORGANIZE four layers: a background b-roll clip, kinetic on-screen captions, a trending-style audio vibe, and a reaction GIF that is the punchline. The GIF must land the joke.",
+    "Given a product, design ONE 5-10 second vertical UGC-style video that is genuinely funny or clever and feels native to current short-form trends — the kind a creator would actually post and people would screenshot.",
+    "You do not generate footage. You ORGANIZE assets: a hero clip or GIF, ONE static on-screen caption, and a trending-style audio bed.",
     "",
     "Reply with ONLY a single minified JSON object — no markdown, no code fences, no commentary. Shape:",
-    '{"productName": string, "siteUrl": string,',
+    '{"format": "reaction" | "composite",',
+    '"productName": string, "siteUrl": string,',
     '"concept": one sentence describing the bit,',
-    '"caption": [{"text": short on-screen line, "startMs": int, "endMs": int}],',
-    '"pexelsQuery": 2-4 words for the background clip,',
-    '"giphyQuery": search for the punchline reaction GIF,',
+    '"caption": one short meme-style on-screen line,',
+    '"reactionQuery": 2-4 words to find a relatable reaction person/clip,',
+    '"pexelsQuery": 2-4 words for a scenic background clip,',
+    '"giphyQuery": search for a reaction GIF,',
     '"audioVibe": short phrase for the trending audio mood,',
     '"accentColor": "#RRGGBB" matching the brand}',
     "",
-    "Build the captions as an arc: a scroll-stopping hook, one or two escalating lines, then the FINAL beat is the punchline — the reaction GIF lands on that last line.",
-    "Rules: 3 to 5 caption beats. Each line punchy (max ~6 words). Times in milliseconds, non-overlapping, roughly 0 to 10000. Lowercase trendy phrasing and at most one emoji per line are fine. Make the humor specific to THIS product — reference what it actually does. No corporate slogans, no generic hype.",
+    'The caption is the whole joke. Write ONE relatable line in a current meme frame — "me when…", "pov:", "nobody:", "when you…" — that name-drops the product and pokes at what it actually does. Lowercase, casual, max ~12 words, at most one emoji.',
+    'Pick "reaction" for most pitches (a full-frame reaction clip carries it); pick "composite" when a scenic background with a small reaction GIF on top fits the bit better.',
+    "Make the humor specific to THIS product. No corporate slogans, no generic hype.",
   ].join("\n");
 
   const user = [`Founder's pitch: "${message}"`, "", siteSummary(site), "", "Write the video."].join("\n");
@@ -109,22 +112,42 @@ function siteSummary(site: SiteContext | null): string {
 function coerceSpec(raw: string, message: string, site: SiteContext | null): RenderSpec | null {
   const json = extractJson(raw);
   if (!json) return null;
-  const caption = coerceCaptions(json.caption);
+  const caption = coerceCaption(json.caption);
   if (!caption) return null;
 
   const name = str(json.productName) || extractProductName(message, site?.host ?? "");
   const url = str(json.siteUrl) || site?.url || (site?.host ? `https://${site.host}` : "");
   const themeHex = site?.themeColor ? hex(site.themeColor) : undefined;
   return {
+    format: json.format === "composite" ? "composite" : "reaction",
     productName: name,
     siteUrl: url,
     concept: str(json.concept) || `${name} UGC reel`,
     caption,
+    reactionQuery: str(json.reactionQuery) || "person reacting excited",
     pexelsQuery: str(json.pexelsQuery) || "aesthetic lifestyle b-roll",
     giphyQuery: str(json.giphyQuery) || "excited reaction",
     audioVibe: str(json.audioVibe) || "upbeat trending",
     accentColor: hex(json.accentColor) || themeHex || "#a855f7",
   };
+}
+
+function coerceCaption(input: unknown): string | null {
+  if (typeof input === "string") return str(input) ?? null;
+  if (Array.isArray(input)) {
+    const joined = input
+      .map((it) =>
+        typeof it === "string"
+          ? it
+          : it && typeof it === "object"
+            ? str((it as Record<string, unknown>).text)
+            : undefined,
+      )
+      .filter(Boolean)
+      .join(" ");
+    return str(joined) ?? null;
+  }
+  return null;
 }
 
 function extractJson(text: string): Record<string, unknown> | null {
@@ -140,27 +163,6 @@ function extractJson(text: string): Record<string, unknown> | null {
   } catch {
     return null;
   }
-}
-
-function coerceCaptions(input: unknown): Caption[] | null {
-  if (!Array.isArray(input)) return null;
-  const lines: { text: string; startMs?: number; endMs?: number }[] = [];
-  for (const it of input) {
-    if (typeof it === "string") {
-      if (it.trim()) lines.push({ text: it.trim() });
-    } else if (it && typeof it === "object") {
-      const o = it as Record<string, unknown>;
-      const text = str(o.text);
-      if (text) lines.push({ text, startMs: num(o.startMs), endMs: num(o.endMs) });
-    }
-  }
-  const picked = lines.slice(0, 5);
-  if (picked.length < 2) return null;
-
-  const timed = picked.every((l) => l.startMs !== undefined && l.endMs !== undefined);
-  return timed
-    ? picked.map((l) => ({ text: l.text, startMs: l.startMs!, endMs: l.endMs! }))
-    : beats(picked.map((l) => l.text));
 }
 
 function heuristicSpec(message: string, site: SiteContext | null): RenderSpec {
@@ -179,62 +181,47 @@ function extractProductName(message: string, host: string): string {
 }
 
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
-const num = (v: unknown) => (typeof v === "number" && isFinite(v) ? v : undefined);
 const hex = (v: unknown) =>
   typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v.trim()) ? v.trim() : undefined;
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
-function beats(lines: string[], totalMs = 9000): Caption[] {
-  const each = Math.round(totalMs / lines.length);
-  return lines.map((text, i) => ({ text, startMs: i * each, endMs: (i + 1) * each }));
-}
-
 type Concept = (name: string, url: string, host: string) => RenderSpec;
 
 const CONCEPTS: Concept[] = [
-  (name, url) => ({
+  (name, url, host) => ({
+    format: "reaction",
     productName: name,
     siteUrl: url,
-    concept: `POV: you finally found ${name} after trying every other app`,
-    caption: beats([
-      "POV: you've tried every app for this",
-      "they all kinda… sucked",
-      `then ${name} pulled up`,
-      "ok this one actually slaps 🔥",
-    ]),
-    pexelsQuery: "person scrolling phone aesthetic",
-    giphyQuery: "mind blown reaction",
+    concept: `POV reaction to discovering ${name}`,
+    caption: `me acting normal until someone asks how i use ${host}`,
+    reactionQuery: "man nodding impressed",
+    pexelsQuery: "person using phone aesthetic",
+    giphyQuery: "impressed nod",
     audioVibe: "upbeat phonk",
     accentColor: "#a855f7",
   }),
-  (name, url, host) => ({
+  (name, url) => ({
+    format: "reaction",
     productName: name,
     siteUrl: url,
-    concept: `"nobody: … ${name} users:" flex meme`,
-    caption: beats([
-      "nobody:",
-      "absolutely nobody:",
-      `${name} users explaining the glow-up:`,
-      `${host} — see for yourself`,
-    ]),
+    concept: `"nobody:" flex meme about ${name}`,
+    caption: `nobody: … me explaining why everyone needs ${name}`,
+    reactionQuery: "person talking fast explaining",
     pexelsQuery: "excited person talking to camera",
-    giphyQuery: "talking fast explaining",
+    giphyQuery: "talking explaining hands",
     audioVibe: "viral comedy sting",
     accentColor: "#ec4899",
   }),
-  (name, url, host) => ({
+  (name, url) => ({
+    format: "composite",
     productName: name,
     siteUrl: url,
-    concept: `rating apps until I hit a 10/10 — spoiler, it's ${name}`,
-    caption: beats([
-      "rating the apps I tried this week",
-      "that one? 4/10 😬",
-      `${name}? a clean 10/10`,
-      `${host} ⭐️⭐️⭐️⭐️⭐️`,
-    ]),
-    pexelsQuery: "aesthetic desk setup laptop",
-    giphyQuery: "chefs kiss perfect",
+    concept: `chill flex — ${name} does the work`,
+    caption: `when ${name} just handles it and i do absolutely nothing`,
+    reactionQuery: "person relaxing satisfied",
+    pexelsQuery: "calm aesthetic sky sunset",
+    giphyQuery: "relaxed chill vibe",
     audioVibe: "lofi flex beat",
     accentColor: "#22d3ee",
   }),

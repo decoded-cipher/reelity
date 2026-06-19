@@ -1,14 +1,3 @@
-export type Role = "user" | "assistant";
-
-export type JobStatus =
-  | "queued"
-  | "scraping"
-  | "thinking"
-  | "sourcing"
-  | "rendering"
-  | "done"
-  | "failed";
-
 export type VideoFormat = "reaction" | "composite";
 
 export interface RenderSpec {
@@ -47,25 +36,4 @@ export interface ResolvedAssets {
   background: BackgroundAsset;
   gif: GifAsset | null;
   audio: AudioAsset | null;
-}
-
-export interface Job {
-  id: string;
-  status: JobStatus;
-  progress: number;
-  spec?: RenderSpec;
-  assets?: ResolvedAssets;
-  videoUrl?: string;
-  poster?: string;
-  concept?: string;
-  error?: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  role: Role;
-  text?: string;
-  job?: Job;
-  pending?: boolean;
-  createdAt: number;
 }

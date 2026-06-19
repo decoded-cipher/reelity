@@ -6,9 +6,10 @@ export async function resolveAssets(
   spec: RenderSpec,
   site: SiteContext | null,
 ): Promise<ResolvedAssets> {
+  const bgQuery = spec.format === "reaction" ? spec.reactionQuery || spec.pexelsQuery : spec.pexelsQuery;
   const [background, gif, audio] = await Promise.all([
-    resolveBackground(env, spec, site),
-    resolveGif(env, spec),
+    resolveBackground(env, bgQuery, site),
+    resolveGif(env, spec.giphyQuery),
     openverseAudio(spec.audioVibe),
   ]);
   return { background, gif, audio };
@@ -16,15 +17,15 @@ export async function resolveAssets(
 
 async function resolveBackground(
   env: Env,
-  spec: RenderSpec,
+  query: string,
   site: SiteContext | null,
 ): Promise<BackgroundAsset> {
   const key = env.PEXELS_API_KEY;
   if (key) {
     const found =
-      (await pexelsVideo(key, spec.pexelsQuery, "portrait")) ??
-      (await pexelsVideo(key, spec.pexelsQuery, "landscape")) ??
-      (await pexelsPhoto(key, spec.pexelsQuery));
+      (await pexelsVideo(key, query, "portrait")) ??
+      (await pexelsVideo(key, query, "landscape")) ??
+      (await pexelsPhoto(key, query));
     if (found) return found;
   }
   if (site?.ogImage) return { kind: "image", url: site.ogImage, poster: site.ogImage, source: "og" };
@@ -84,11 +85,11 @@ interface GiphyGif {
   images: Record<string, { url?: string }>;
 }
 
-async function resolveGif(env: Env, spec: RenderSpec): Promise<GifAsset | null> {
+async function resolveGif(env: Env, query: string): Promise<GifAsset | null> {
   const key = env.GIPHY_API_KEY;
   if (!key) return null;
   const data = await fetchJson<{ data?: GiphyGif[] }>(
-    `https://api.giphy.com/v1/gifs/search?api_key=${key}&q=${enc(spec.giphyQuery)}&limit=12&rating=pg-13&bundle=messaging_non_clips`,
+    `https://api.giphy.com/v1/gifs/search?api_key=${key}&q=${enc(query)}&limit=12&rating=pg-13&bundle=messaging_non_clips`,
   );
   const gif = sample(data?.data);
   const url = gif?.images.original?.url || gif?.images.downsized_large?.url;
