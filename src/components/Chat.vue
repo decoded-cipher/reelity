@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { nanoid } from "nanoid";
 import type { ChatMessage } from "../lib/types";
 import { generate } from "../lib/api";
 import MessageList from "./MessageList.vue";
@@ -8,16 +9,15 @@ import Composer from "./Composer.vue";
 const messages = ref<ChatMessage[]>([]);
 const busy = ref(false);
 
-const uid = () => Math.random().toString(36).slice(2);
 const isEmpty = computed(() => messages.value.length === 0);
 
 async function send(text: string) {
   if (busy.value || !text.trim()) return;
   busy.value = true;
 
-  messages.value.push({ id: uid(), role: "user", text, createdAt: Date.now() });
+  messages.value.push({ id: nanoid(), role: "user", text, createdAt: Date.now() });
   const reply: ChatMessage = {
-    id: uid(),
+    id: nanoid(),
     role: "assistant",
     job: { id: "", status: "queued", progress: 0 },
     createdAt: Date.now(),
@@ -29,7 +29,7 @@ async function send(text: string) {
       reply.job = job;
     });
   } catch (e) {
-    reply.job = { id: uid(), status: "failed", progress: 0, error: (e as Error).message };
+    reply.job = { id: nanoid(), status: "failed", progress: 0, error: (e as Error).message };
   } finally {
     busy.value = false;
   }

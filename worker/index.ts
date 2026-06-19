@@ -1,6 +1,8 @@
 import { Hono } from "hono";
+import { nanoid } from "nanoid";
 import type { Job } from "../src/lib/types";
 import { buildSpec } from "./brain";
+import { resolveAssets } from "./assets";
 import { normalizeUrl, scrapeSite } from "./scrape";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -14,8 +16,16 @@ app.post("/api/generate", async (c) => {
   const url = normalizeUrl(message);
   const site = url ? await scrapeSite(url) : null;
   const spec = await buildSpec(c.env, message.trim(), site);
+  const assets = await resolveAssets(c.env, spec, site);
 
-  const job: Job = { id: crypto.randomUUID(), status: "done", progress: 100, spec, concept: spec.concept };
+  const job: Job = {
+    id: nanoid(),
+    status: "done",
+    progress: 100,
+    spec,
+    assets,
+    concept: spec.concept,
+  };
   return c.json(job);
 });
 

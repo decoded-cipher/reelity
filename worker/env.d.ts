@@ -4,4 +4,6 @@ interface Env {
   BRAIN_PROVIDER?: string;
   BRAIN_MODEL?: string;
   WORKERS_AI_MODEL?: string;
+  PEXELS_API_KEY?: string;
+  GIPHY_API_KEY?: string;
 }
