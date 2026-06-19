@@ -1,11 +1,17 @@
+import { generateText, type LanguageModel } from "ai";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import type { Caption, RenderSpec } from "../src/lib/types";
 import type { SiteContext } from "./scrape";
 
 const TEMPLATES = ["pov", "rating", "nobody", "beforeafter", "listicle"] as const;
 type Template = (typeof TEMPLATES)[number];
 
-const DEFAULT_CLAUDE_MODEL = "claude-opus-4-8";
-const DEFAULT_WORKERS_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+const DEFAULTS = {
+  anthropic: "claude-opus-4-8",
+  google: "gemini-2.0-flash",
+  workersAi: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+};
 
 export async function buildSpec(
   env: Env,
@@ -14,15 +20,56 @@ export async function buildSpec(
 ): Promise<RenderSpec> {
   const { system, user } = buildPrompt(message, site);
   try {
-    const raw = env.ANTHROPIC_API_KEY
-      ? await callClaude(env, system, user)
-      : await callWorkersAi(env, system, user);
+    const model = sdkModel(env);
+    const raw = model
+      ? (
+          await generateText({
+            model,
+            system,
+            prompt: user,
+            temperature: 0.9,
+            maxOutputTokens: 1024,
+            abortSignal: AbortSignal.timeout(20000),
+          })
+        ).text
+      : await workersAi(env, system, user);
     const spec = coerceSpec(raw, message, site);
     if (spec) return spec;
-  } catch {
-    /* network/parse failure → heuristic below */
-  }
+  } catch {}
   return heuristicSpec(message, site);
+}
+
+function sdkModel(env: Env): LanguageModel | null {
+  const id = env.BRAIN_MODEL;
+  const make = {
+    anthropic: () => createAnthropic({ apiKey: env.ANTHROPIC_API_KEY })(id || DEFAULTS.anthropic),
+    google: () =>
+      createGoogleGenerativeAI({ apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY })(id || DEFAULTS.google),
+  };
+  const want = env.BRAIN_PROVIDER?.toLowerCase();
+  if (want === "anthropic" || want === "google") return make[want]();
+  if (env.ANTHROPIC_API_KEY) return make.anthropic();
+  if (env.GOOGLE_GENERATIVE_AI_API_KEY) return make.google();
+  return null;
+}
+
+type TextAI = {
+  run(
+    model: string,
+    input: { messages: { role: string; content: string }[]; max_tokens?: number },
+  ): Promise<{ response?: string }>;
+};
+
+async function workersAi(env: Env, system: string, user: string): Promise<string> {
+  const ai = env.AI as unknown as TextAI;
+  const out = await ai.run(env.WORKERS_AI_MODEL || DEFAULTS.workersAi, {
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    max_tokens: 1024,
+  });
+  return out.response ?? "";
 }
 
 function buildPrompt(message: string, site: SiteContext | null) {
@@ -60,62 +107,6 @@ function siteSummary(site: SiteContext | null): string {
   ]
     .filter(Boolean)
     .join("\n");
-}
-
-async function callClaude(env: Env, system: string, user: string): Promise<string> {
-  const res = await fetchWithTimeout(
-    "https://api.anthropic.com/v1/messages",
-    {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": env.ANTHROPIC_API_KEY!,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: env.BRAIN_MODEL || DEFAULT_CLAUDE_MODEL,
-        max_tokens: 1024,
-        system,
-        messages: [{ role: "user", content: user }],
-      }),
-    },
-    20000,
-  );
-  if (!res.ok) throw new Error(`anthropic ${res.status}`);
-  const data = (await res.json()) as { content?: { type: string; text?: string }[] };
-  return (data.content ?? [])
-    .filter((b) => b.type === "text")
-    .map((b) => b.text ?? "")
-    .join("");
-}
-
-type TextAI = {
-  run(
-    model: string,
-    input: { messages: { role: string; content: string }[]; max_tokens?: number },
-  ): Promise<{ response?: string }>;
-};
-
-async function callWorkersAi(env: Env, system: string, user: string): Promise<string> {
-  const ai = env.AI as unknown as TextAI;
-  const out = await ai.run(env.WORKERS_AI_MODEL || DEFAULT_WORKERS_AI_MODEL, {
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-    max_tokens: 1024,
-  });
-  return out.response ?? "";
-}
-
-async function fetchWithTimeout(url: string, init: RequestInit, ms: number): Promise<Response> {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), ms);
-  try {
-    return await fetch(url, { ...init, signal: ctrl.signal });
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 function coerceSpec(raw: string, message: string, site: SiteContext | null): RenderSpec | null {
