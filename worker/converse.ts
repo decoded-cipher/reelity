@@ -56,8 +56,30 @@ function heuristicRoute(message: string): Route {
 
 function looksLikeProduct(message: string): boolean {
   if (normalizeUrl(message)) return true;
-  return /\b(build(ing)?|launch(ing)?|made|created?|promot\w*|market\w*|advertis\w*|video for|reel for|my (app|product|brand|startup|company|site|website|saas|tool|platform))\b/i.test(
-    message,
+  const m = message.trim();
+  if (isSmallTalk(m)) return false;
+  if (
+    /\b(build(ing)?|launch(ing)?|made|creat\w*|promot\w*|market\w*|advertis\w*|video for|reel for|try (with )?this|make (me )?an? (video|reel|ugc)|my (app|product|brand|startup|company|site|website|saas|tool|platform))\b/i.test(
+      m,
+    )
+  )
+    return true;
+  if (
+    /\b(app|tool|platform|backend|api|sdk|saas|startup|service|extension|plugin|bot|software|website|open[- ]?source|marketplace|store|dashboard|widget|agent|engine)\b/i.test(
+      m,
+    )
+  )
+    return true;
+  // "Name : description" / "Name - description" pitch shape
+  return /^[\w][\w .&'+-]{0,32}\s*[:\-–—]\s+\S/.test(m);
+}
+
+function isSmallTalk(m: string): boolean {
+  return (
+    /^(hi|hey+|hello|yo|sup|howdy|gm|gn|wassup|what'?s up|thanks?|thank you|ty|cheers)\b/i.test(m) ||
+    /\b(what can you do|what do you do|who are you|how (do|does) (you|this|it)|how does this work|what is reelity)\b/i.test(
+      m,
+    )
   );
 }
 

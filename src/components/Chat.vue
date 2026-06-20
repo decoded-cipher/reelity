@@ -44,6 +44,11 @@ async function send(text: string) {
     <header class="shrink-0 border-b-2 border-[#0a0a0a] bg-white">
       <div class="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
         <div class="flex items-center gap-2.5">
+          <span
+            class="grid h-7 w-7 place-items-center rounded-[7px] border-2 border-[#0a0a0a] bg-[#c6f000] shadow-[2px_2px_0_0_#0a0a0a]"
+          >
+            <svg viewBox="0 0 24 24" class="h-3.5 w-3.5"><path d="M8 5 L8 19 L19 12 Z" fill="#0a0a0a" /></svg>
+          </span>
           <span class="font-display text-xl font-bold tracking-tight">REELITY</span>
           <span
             class="rounded-[5px] border-2 border-[#0a0a0a] bg-[#c6f000] px-1.5 py-px font-mono text-[10px] font-bold uppercase leading-tight"

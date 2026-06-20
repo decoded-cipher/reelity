@@ -68,14 +68,23 @@ export async function renderJob(job: Job, opts: RenderOptions = {}): Promise<Blo
     let heroIsGif = false;
     let bgIdx: number;
 
-    if (bg.kind === "video" && bg.url) {
-      await ff.writeFile("hero", await fetchFile(bg.url));
+    // A single flaky asset must not kill the render: bg falls back to a gradient,
+    // the GIF and audio are simply dropped if their proxy fetch fails.
+    const videoBytes = bg.kind === "video" && bg.url ? await tryFetch(bg.url) : null;
+    const imageBytes =
+      !videoBytes && bg.kind === "image" && (bg.url || bg.poster)
+        ? await tryFetch((bg.url || bg.poster)!)
+        : null;
+    const gifBytes = assets.gif ? await tryFetch(assets.gif.url) : null;
+
+    if (videoBytes) {
+      await ff.writeFile("hero", videoBytes);
       bgIdx = add("-stream_loop", "-1", "-i", "hero");
-    } else if (bg.kind === "image" && (bg.url || bg.poster)) {
-      await ff.writeFile("hero", await fetchFile((bg.url || bg.poster)!));
+    } else if (imageBytes) {
+      await ff.writeFile("hero", imageBytes);
       bgIdx = add("-loop", "1", "-i", "hero");
-    } else if (spec.format === "reaction" && assets.gif) {
-      await ff.writeFile("hero.gif", await fetchFile(assets.gif.url));
+    } else if (gifBytes) {
+      await ff.writeFile("hero.gif", gifBytes);
       bgIdx = add("-ignore_loop", "0", "-i", "hero.gif");
       heroIsGif = true;
     } else {
@@ -83,9 +92,10 @@ export async function renderJob(job: Job, opts: RenderOptions = {}): Promise<Blo
       bgIdx = add("-loop", "1", "-i", "bg.png");
     }
 
+    // The GIF is the punchline — keep it on top whenever it isn't already the backdrop.
     let overlayIdx = -1;
-    if (spec.format === "composite" && assets.gif && !heroIsGif) {
-      await ff.writeFile("ov.gif", await fetchFile(assets.gif.url));
+    if (gifBytes && !heroIsGif) {
+      await ff.writeFile("ov.gif", gifBytes);
       overlayIdx = add("-ignore_loop", "0", "-i", "ov.gif");
     }
 
@@ -93,11 +103,10 @@ export async function renderJob(job: Job, opts: RenderOptions = {}): Promise<Blo
 
     let audioIdx = -1;
     if (assets.audio?.url) {
-      try {
-        await ff.writeFile("audio.mp3", await fetchFile(assets.audio.url));
+      const audioBytes = await tryFetch(assets.audio.url);
+      if (audioBytes) {
+        await ff.writeFile("audio.mp3", audioBytes);
         audioIdx = add("-stream_loop", "-1", "-i", "audio.mp3");
-      } catch {
-        audioIdx = -1;
       }
     }
 
@@ -106,8 +115,8 @@ export async function renderJob(job: Job, opts: RenderOptions = {}): Promise<Blo
     ];
     let base = "bg";
     if (overlayIdx >= 0) {
-      fc.push(`[${overlayIdx}:v]scale=${Math.round(W * 0.6)}:-1[g]`);
-      fc.push(`[bg][g]overlay=(W-w)/2:H*0.46[ov]`);
+      fc.push(`[${overlayIdx}:v]scale=${Math.round(W * 0.64)}:-1[g]`);
+      fc.push(`[bg][g]overlay=(W-w)/2:H*0.5[ov]`);
       base = "ov";
     }
     fc.push(`[${base}][${capIdx}:v]overlay=0:0:eof_action=repeat[v]`);
@@ -131,6 +140,14 @@ export async function renderJob(job: Job, opts: RenderOptions = {}): Promise<Blo
     return new Blob([new Uint8Array(data).buffer], { type: "video/mp4" });
   } finally {
     ff.off("progress", onProgress);
+  }
+}
+
+async function tryFetch(url: string): Promise<Uint8Array | null> {
+  try {
+    return await fetchFile(url);
+  } catch {
+    return null;
   }
 }
 
