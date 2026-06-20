@@ -5,7 +5,7 @@ import type { ChatMessage, ChatTurn } from "../lib/types";
 import { send as sendMessage } from "../lib/api";
 import { preloadFFmpeg } from "../lib/ffmpeg";
 import { initTurnstile } from "../lib/turnstile";
-import { chatIdFromPath, newChatId, loadChat, saveChat, fetchChat } from "../lib/chats";
+import { chatIdFromPath, newChatId, fetchChat } from "../lib/chats";
 import MessageList from "./MessageList.vue";
 import Composer from "./Composer.vue";
 
@@ -17,21 +17,13 @@ const chatId = ref<string | null>(null);
 async function openFromUrl() {
   const id = chatIdFromPath();
   chatId.value = id;
-  if (!id) {
-    messages.value = [];
-    updateTitle();
-    return;
-  }
-  const local = loadChat(id);
-  messages.value = local;
+  messages.value = [];
   updateTitle();
-  if (!local.length) {
-    const remote = await fetchChat(id);
-    if (chatId.value === id && remote.length) {
-      messages.value = remote;
-      saveChat(id, remote);
-      updateTitle();
-    }
+  if (!id) return;
+  const remote = await fetchChat(id);
+  if (chatId.value === id) {
+    messages.value = remote;
+    updateTitle();
   }
 }
 
@@ -50,21 +42,6 @@ onMounted(() => {
 onUnmounted(() => window.removeEventListener("popstate", openFromUrl));
 
 const isEmpty = computed(() => messages.value.length === 0);
-
-function persist() {
-  if (!chatId.value) return;
-  const keep = messages.value
-    .map((m): ChatMessage | null => {
-      if (m.role === "user") return m;
-      if (m.pending) return null;
-      // blob: URLs don't survive a reload — drop so the card falls back gracefully
-      if (m.job?.videoUrl?.startsWith("blob:")) return { ...m, job: { ...m.job, videoUrl: undefined } };
-      if (m.job && m.job.status !== "done" && m.job.status !== "failed") return null;
-      return m.text || m.job ? m : null;
-    })
-    .filter((m): m is ChatMessage => m !== null);
-  saveChat(chatId.value, keep);
-}
 
 function newChat() {
   if (location.pathname !== "/") history.pushState({}, "", "/");
@@ -114,7 +91,6 @@ async function send(text: string) {
     live.job = { id: nanoid(), status: "failed", progress: 0, error: (e as Error).message };
   } finally {
     busy.value = false;
-    persist();
   }
 }
 </script>
