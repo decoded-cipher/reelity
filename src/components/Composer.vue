@@ -46,7 +46,7 @@ function resize() {
           v-for="(ex, i) in EXAMPLES"
           :key="ex"
           :disabled="busy"
-          class="press rounded-[8px] border-2 border-[#0a0a0a] px-3.5 py-2 font-mono text-sm font-medium shadow-[2px_2px_0_0_#0a0a0a]"
+          class="press rounded-[8px] border-2 border-[#0a0a0a] px-3 py-1.5 font-mono text-[13px] font-medium shadow-[2px_2px_0_0_#0a0a0a] sm:px-3.5 sm:py-2 sm:text-sm"
           :class="i === 0 ? 'bg-[#c6f000]' : 'bg-white'"
           @click="emit('send', ex)"
         >
@@ -63,7 +63,7 @@ function resize() {
           rows="1"
           :disabled="busy"
           placeholder="Tell me what you're building + paste a link…"
-          class="max-h-48 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[17px] leading-snug text-[#0a0a0a] placeholder:text-[#0a0a0a]/40 focus:outline-none disabled:opacity-50"
+          class="max-h-48 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-base leading-snug text-[#0a0a0a] placeholder:text-[#0a0a0a]/40 focus:outline-none disabled:opacity-50 sm:text-[17px]"
           @input="resize"
           @keydown="onKeydown"
         />
