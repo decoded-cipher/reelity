@@ -34,7 +34,13 @@ const shareUrl = computed(() => {
 });
 // real file when we have it, else the R2-served URL (survives reloads / blob loss)
 const downloadUrl = computed(() => videoUrl.value ?? shareUrl.value);
-const shareText = computed(() => caption.value || `Check out this ${spec.value?.productName ?? "product"} reel`);
+const shareText = computed(() => {
+  const cap = caption.value?.trim();
+  const product = spec.value?.productName ?? "this product";
+  return cap
+    ? `${cap} — ${product}'s UGC reel, made in one message with Reelity 🎬`
+    : `${product}'s UGC reel, made in one message with Reelity 🎬`;
+});
 
 const details = computed(() => [
   { k: "model", v: props.job.model ?? "—" },

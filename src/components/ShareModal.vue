@@ -53,7 +53,7 @@ async function nativeShare() {
           {{ text }}
         </p>
 
-        <div class="mt-4 grid grid-cols-4 gap-2">
+        <div class="mt-4 grid grid-cols-3 gap-2">
           <a
             v-for="s in links"
             :key="s.name"
