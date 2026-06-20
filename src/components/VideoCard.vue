@@ -108,38 +108,39 @@ function download() {
         </template>
       </div>
 
-      <div class="flex min-w-0 flex-1 flex-col">
-        <div class="flex items-center gap-1.5">
-          <span class="rounded-[5px] border-2 border-[#0a0a0a] bg-[#c6f000] px-1.5 py-px font-mono text-[10px] font-bold uppercase">
-            {{ spec?.format }}
-          </span>
-          <span class="truncate font-display text-sm font-bold">{{ spec?.productName }}</span>
+      <div class="flex min-w-0 flex-1 flex-col justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="shrink-0 rounded-[5px] border-2 border-[#0a0a0a] bg-[#c6f000] px-1.5 py-px font-mono text-[10px] font-bold uppercase">
+              {{ spec?.format }}
+            </span>
+            <span class="truncate font-display text-sm font-bold">{{ spec?.productName }}</span>
+          </div>
+          <p class="mt-2 line-clamp-3 text-[13px] leading-snug text-[#0a0a0a]/80">{{ job.concept }}</p>
         </div>
-        <p class="mt-2 text-[13px] leading-snug text-[#0a0a0a]/80">{{ job.concept }}</p>
 
-        <div class="mt-3 flex flex-wrap gap-1.5">
+        <div class="space-y-1.5">
           <button
-            class="press inline-flex items-center gap-1 rounded-[7px] border-2 border-[#0a0a0a] bg-[#c6f000] px-2.5 py-1 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
+            class="press flex w-full items-center justify-center gap-1 rounded-[8px] border-2 border-[#0a0a0a] bg-[#c6f000] px-3 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
             @click="download"
           >
             ↓ download
           </button>
-          <button
-            class="press inline-flex items-center gap-1 rounded-[7px] border-2 border-[#0a0a0a] bg-white px-2.5 py-1 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
-            @click="showShare = true"
-          >
-            ↗ share
-          </button>
-          <button
-            class="press inline-flex items-center gap-1 rounded-[7px] border-2 border-[#0a0a0a] bg-white px-2.5 py-1 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
-            @click="emit('remix')"
-          >
-            ⟳ regenerate
-          </button>
-        </div>
-
-        <div class="mt-auto pt-3">
-          <div class="flex items-center gap-1.5 rounded-[7px] border-2 border-[#0a0a0a] bg-[#f5f2e9] px-2 py-1.5">
+          <div class="grid grid-cols-2 gap-1.5">
+            <button
+              class="press flex items-center justify-center gap-1 rounded-[8px] border-2 border-[#0a0a0a] bg-white px-2 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
+              @click="showShare = true"
+            >
+              ↗ share
+            </button>
+            <button
+              class="press flex items-center justify-center gap-1 rounded-[8px] border-2 border-[#0a0a0a] bg-white px-2 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
+              @click="emit('remix')"
+            >
+              ⟳ regen
+            </button>
+          </div>
+          <div class="flex items-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-[#f5f2e9] px-2 py-1.5">
             <span class="truncate font-mono text-[11px] text-[#0a0a0a]/70">{{ shareUrl }}</span>
             <button
               class="press ml-auto shrink-0 rounded-[5px] border-2 border-[#0a0a0a] bg-white px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase shadow-[2px_2px_0_0_#0a0a0a]"
