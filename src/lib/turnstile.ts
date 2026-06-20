@@ -7,7 +7,6 @@ interface TurnstileApi {
 declare global {
   interface Window {
     turnstile?: TurnstileApi;
-    onTurnstileLoad?: () => void;
   }
 }
 
@@ -23,8 +22,9 @@ function resolveAll(t: string) {
 }
 
 export function initTurnstile(container: HTMLElement): void {
-  const render = () => {
-    if (!window.turnstile || widgetId !== undefined) return;
+  const tryRender = (): boolean => {
+    if (widgetId !== undefined) return true;
+    if (!window.turnstile) return false;
     widgetId = window.turnstile.render(container, {
       sitekey: SITEKEY,
       appearance: "interaction-only",
@@ -35,9 +35,14 @@ export function initTurnstile(container: HTMLElement): void {
         if (widgetId) window.turnstile?.reset(widgetId);
       },
     });
+    return true;
   };
-  if (window.turnstile) render();
-  else window.onTurnstileLoad = render;
+
+  if (tryRender()) return;
+  const poll = setInterval(() => {
+    if (tryRender()) clearInterval(poll);
+  }, 100);
+  setTimeout(() => clearInterval(poll), 10000);
 }
 
 // One token per call (Turnstile tokens are single-use); pre-fetches the next.
