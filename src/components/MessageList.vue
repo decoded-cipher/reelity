@@ -7,6 +7,13 @@ import VideoCard from "./VideoCard.vue";
 const props = defineProps<{ messages: ChatMessage[] }>();
 const emit = defineEmits<{ remix: [text: string] }>();
 
+const layers = [
+  { n: "01", name: "Clip", desc: "real background b-roll" },
+  { n: "02", name: "Caption", desc: "trend-native meme line" },
+  { n: "03", name: "Sound", desc: "trending audio bed" },
+  { n: "04", name: "GIF", desc: "the punchline, on top" },
+];
+
 const scroller = ref<HTMLElement>();
 
 watch(
@@ -33,26 +40,35 @@ function remix(i: number) {
   <div ref="scroller" class="flex-1 overflow-y-auto">
     <div
       v-if="!messages.length"
-      class="mx-auto flex h-full max-w-2xl flex-col justify-center px-4 py-10"
+      class="mx-auto flex min-h-full max-w-3xl flex-col justify-center px-5 py-12"
     >
       <span
-        class="brut mb-5 w-fit px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-widest"
+        class="brut mb-6 w-fit px-2.5 py-1 font-mono text-xs font-bold uppercase tracking-widest"
       >
-        ai-organized · not ai-generated
+        ai-organized — not ai-generated
       </span>
-      <h1 class="font-display text-5xl font-bold leading-[0.92] tracking-tight sm:text-[64px]">
-        turn a link<br />
-        into a
-        <span class="inline-block -rotate-1 border-2 border-[#0a0a0a] bg-[#c6f000] px-2 leading-none shadow-[3px_3px_0_0_#0a0a0a]">
+      <h1 class="font-display text-6xl font-extrabold leading-[0.88] tracking-tight sm:text-8xl">
+        drop a link.<br />
+        get a
+        <span class="inline-block -rotate-1 border-[3px] border-[#0a0a0a] bg-[#c6f000] px-3 leading-none shadow-[5px_5px_0_0_#0a0a0a]">
           reel.
         </span>
       </h1>
-      <p class="mt-6 max-w-md text-[15px] leading-relaxed text-[#0a0a0a]/70">
-        Paste a product pitch and a link. I read the site and assemble a vertical UGC video — real
-        clip, trend caption, sound, and the punchline GIF — then drop it right here.
+      <p class="mt-7 max-w-xl text-lg leading-relaxed text-[#0a0a0a]/75 sm:text-xl">
+        Reelity reads your product's site and assembles a vertical, scroll-stopping UGC video —
+        then drops the link right here in chat. One message, done.
       </p>
-      <p class="mt-5 font-mono text-[11px] uppercase tracking-widest text-[#0a0a0a]/45">
-        ↓ try one below
+
+      <div class="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div v-for="l in layers" :key="l.n" class="brut p-3.5">
+          <div class="font-mono text-[11px] font-bold text-[#0a0a0a]/40">{{ l.n }}</div>
+          <div class="mt-1.5 font-display text-lg font-bold leading-none">{{ l.name }}</div>
+          <div class="mt-1 text-[12px] leading-snug text-[#0a0a0a]/60">{{ l.desc }}</div>
+        </div>
+      </div>
+
+      <p class="mt-8 font-mono text-xs uppercase tracking-widest text-[#0a0a0a]/45">
+        ↓ try an example below
       </p>
     </div>
 
