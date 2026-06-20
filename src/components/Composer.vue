@@ -47,7 +47,7 @@ function resize() {
           :key="ex"
           :disabled="busy"
           class="press rounded-[8px] border-2 border-[#0a0a0a] px-3 py-1.5 font-mono text-[13px] font-medium shadow-[2px_2px_0_0_#0a0a0a] sm:text-sm"
-          :class="i === 0 ? 'bg-[#c6f000]' : 'bg-white'"
+          :class="[i === 0 ? 'bg-[#c6f000]' : 'bg-white', i === 3 ? 'hidden sm:inline-block' : '']"
           @click="emit('send', ex)"
         >
           {{ ex }}

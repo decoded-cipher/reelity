@@ -54,8 +54,8 @@ function remix(i: number) {
           reel.
         </span>
       </h1>
-      <p class="mt-5 max-w-xl text-base leading-relaxed text-[#0a0a0a]/75 sm:mt-7 sm:text-xl">
-        Reelity reads your product's site and assembles a vertical, scroll-stopping UGC video —
+      <p class="mt-5 text-base leading-relaxed text-[#0a0a0a]/75 sm:mt-7 sm:max-w-4xl sm:text-xl">
+        Reelity reads your product's site and assembles a vertical, scroll-stopping UGC video —<br class="hidden sm:block" />
         then drops the link right here in chat. One message, done.
       </p>
 
