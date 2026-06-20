@@ -86,7 +86,7 @@ async function verifyTurnstile(
   token: string | undefined,
   ip: string | undefined,
 ): Promise<boolean> {
-  if (!env.TURNSTILE_SECRET_KEY) return true; // not configured (e.g. local dev) → allow
+  if (!env.TURNSTILE_SECRET_KEY) return false;
   if (!token) return false;
   const form = new FormData();
   form.append("secret", env.TURNSTILE_SECRET_KEY);
