@@ -174,4 +174,24 @@ app.get("/v/:key", async (c) => {
   });
 });
 
+// ffmpeg.wasm core served first-party from R2 so ad blockers / CDN outages can't break rendering
+const FFMPEG_FILES: Record<string, string> = {
+  "ffmpeg-core.js": "text/javascript",
+  "ffmpeg-core.wasm": "application/wasm",
+};
+
+app.get("/ffmpeg/:file", async (c) => {
+  const type = FFMPEG_FILES[c.req.param("file")];
+  if (!type) return c.notFound();
+  const obj = await c.env.VIDEOS.get(`ffmpeg/${c.req.param("file")}`);
+  if (!obj) return c.notFound();
+  return new Response(obj.body, {
+    headers: {
+      "content-type": type,
+      "cache-control": "public, max-age=31536000, immutable",
+      etag: obj.httpEtag,
+    },
+  });
+});
+
 export default app;

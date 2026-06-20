@@ -6,7 +6,7 @@ const W = 720;
 const H = 1280;
 const FPS = 30;
 const DUR = 8;
-const CORE = "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd";
+const CORE_SOURCES = ["/ffmpeg", "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd"];
 
 let instance: FFmpeg | null = null;
 let loading: Promise<FFmpeg> | null = null;
@@ -22,16 +22,28 @@ async function getFFmpeg(): Promise<FFmpeg> {
   if (!loading) {
     loading = (async () => {
       const ff = new FFmpeg();
-      const [coreURL, wasmURL] = await Promise.all([
-        toBlobURL(`${CORE}/ffmpeg-core.js`, "text/javascript"),
-        toBlobURL(`${CORE}/ffmpeg-core.wasm`, "application/wasm"),
-      ]);
-      await ff.load({ coreURL, wasmURL });
+      await ff.load(await loadCore());
       instance = ff;
       return ff;
     })();
   }
   return loading;
+}
+
+async function loadCore(): Promise<{ coreURL: string; wasmURL: string }> {
+  let lastErr: unknown;
+  for (const base of CORE_SOURCES) {
+    try {
+      const [coreURL, wasmURL] = await Promise.all([
+        toBlobURL(`${base}/ffmpeg-core.js`, "text/javascript"),
+        toBlobURL(`${base}/ffmpeg-core.wasm`, "application/wasm"),
+      ]);
+      return { coreURL, wasmURL };
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw new Error(`ffmpeg core failed to load (${lastErr})`);
 }
 
 function ensureFont(): Promise<void> {
@@ -68,8 +80,6 @@ export async function renderJob(job: Job, opts: RenderOptions = {}): Promise<Blo
     let heroIsGif = false;
     let bgIdx: number;
 
-    // A single flaky asset must not kill the render: bg falls back to a gradient,
-    // the GIF and audio are simply dropped if their proxy fetch fails.
     const videoBytes = bg.kind === "video" && bg.url ? await tryFetch(bg.url) : null;
     const imageBytes =
       !videoBytes && bg.kind === "image" && (bg.url || bg.poster)
@@ -92,7 +102,6 @@ export async function renderJob(job: Job, opts: RenderOptions = {}): Promise<Blo
       bgIdx = add("-loop", "1", "-i", "bg.png");
     }
 
-    // The GIF is the punchline — keep it on top whenever it isn't already the backdrop.
     let overlayIdx = -1;
     if (gifBytes && !heroIsGif) {
       await ff.writeFile("ov.gif", gifBytes);
