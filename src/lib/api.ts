@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 import type { Job } from "./types";
 import { renderJob } from "./ffmpeg";
+import { getTurnstileToken } from "./turnstile";
 
 export type SendResult = { kind: "reply"; text: string } | { kind: "job"; job: Job };
 
@@ -26,10 +27,11 @@ export function resetSession(): void {
 }
 
 export async function send(message: string, onStep?: (job: Job) => void): Promise<SendResult> {
+  const turnstileToken = await getTurnstileToken();
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ message, sessionId: sessionId() }),
+    body: JSON.stringify({ message, sessionId: sessionId(), turnstileToken }),
   });
   if (!res.ok) throw new Error(`request failed (${res.status})`);
   const data = (await res.json()) as SendResult;

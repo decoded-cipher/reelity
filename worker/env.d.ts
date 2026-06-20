@@ -6,4 +6,5 @@ interface Env {
   WORKERS_AI_MODEL?: string;
   PEXELS_API_KEY?: string;
   GIPHY_API_KEY?: string;
+  TURNSTILE_SECRET_KEY?: string;
 }

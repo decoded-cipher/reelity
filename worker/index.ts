@@ -12,8 +12,12 @@ const app = new Hono<{ Bindings: Env }>();
 app.get("/api/health", (c) => c.json({ ok: true }));
 
 app.post("/api/chat", async (c) => {
-  const body = await c.req.json<{ message?: string; sessionId?: string }>();
+  const body = await c.req.json<{ message?: string; sessionId?: string; turnstileToken?: string }>();
   if (!body.message?.trim()) return c.json({ error: "message required" }, 400);
+
+  const ok = await verifyTurnstile(c.env, body.turnstileToken, c.req.header("cf-connecting-ip"));
+  if (!ok) return c.json({ error: "bot verification failed" }, 403);
+
   const text = body.message.trim();
   const sessionId = body.sessionId;
   const log = (p: Promise<unknown>) => c.executionCtx.waitUntil(p.catch(() => {}));
@@ -39,8 +43,9 @@ app.post("/api/chat", async (c) => {
   const assets = await resolveAssets(c.env, spec, site);
   const id = nanoid();
 
-  log(
-    insertGeneration(c.env.DB, {
+  // awaited so the row exists before the client uploads its rendered video to /api/videos/:id
+  try {
+    await insertGeneration(c.env.DB, {
       id,
       sessionId,
       prompt: text,
@@ -53,8 +58,8 @@ app.post("/api/chat", async (c) => {
       spec,
       assets,
       model: source,
-    }),
-  );
+    });
+  } catch {}
 
   const job: Job = {
     id,
@@ -66,6 +71,29 @@ app.post("/api/chat", async (c) => {
   };
   return c.json({ kind: "job", job });
 });
+
+async function verifyTurnstile(
+  env: Env,
+  token: string | undefined,
+  ip: string | undefined,
+): Promise<boolean> {
+  if (!env.TURNSTILE_SECRET_KEY) return true; // not configured (e.g. local dev) → allow
+  if (!token) return false;
+  const form = new FormData();
+  form.append("secret", env.TURNSTILE_SECRET_KEY);
+  form.append("response", token);
+  if (ip) form.append("remoteip", ip);
+  try {
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body: form,
+    });
+    const data = (await res.json()) as { success?: boolean };
+    return data.success === true;
+  } catch {
+    return false;
+  }
+}
 
 app.get("/api/history", async (c) => {
   try {
@@ -113,6 +141,11 @@ app.put("/api/videos/:key", async (c) => {
   const key = c.req.param("key");
   if (!/^[A-Za-z0-9_-]+\.mp4$/.test(key)) return c.text("bad key", 400);
   if (!c.req.raw.body) return c.text("no body", 400);
+  // only accept uploads for an id created by a verified /api/chat generation
+  const known = await c.env.DB.prepare("SELECT 1 FROM generations WHERE id = ? LIMIT 1")
+    .bind(key.replace(/\.mp4$/, ""))
+    .first();
+  if (!known) return c.text("unknown id", 403);
   await c.env.VIDEOS.put(key, c.req.raw.body, { httpMetadata: { contentType: "video/mp4" } });
   c.executionCtx.waitUntil(
     setVideoUrl(c.env.DB, key.replace(/\.mp4$/, ""), `/v/${key}`).catch(() => {}),

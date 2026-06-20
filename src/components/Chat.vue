@@ -4,15 +4,18 @@ import { nanoid } from "nanoid";
 import type { ChatMessage } from "../lib/types";
 import { send as sendMessage, resetSession } from "../lib/api";
 import { preloadFFmpeg } from "../lib/ffmpeg";
+import { initTurnstile } from "../lib/turnstile";
 import MessageList from "./MessageList.vue";
 import Composer from "./Composer.vue";
 
 const STORAGE_KEY = "reelity.chat.v1";
 const messages = ref<ChatMessage[]>([]);
 const busy = ref(false);
+const tsEl = ref<HTMLElement>();
 
 onMounted(() => {
   preloadFFmpeg();
+  if (tsEl.value) initTurnstile(tsEl.value);
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) messages.value = (JSON.parse(raw) as ChatMessage[]).map((m) => ({ ...m, pending: false }));
@@ -104,6 +107,7 @@ async function send(text: string) {
     </header>
 
     <MessageList :messages="messages" @remix="send" />
+    <div ref="tsEl" class="mx-auto flex max-w-2xl justify-center px-4 empty:hidden" />
     <Composer :busy="busy" :show-examples="isEmpty" @send="send" />
   </div>
 </template>
