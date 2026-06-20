@@ -1,30 +1,44 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { nanoid } from "nanoid";
 import type { ChatMessage, ChatTurn } from "../lib/types";
-import { send as sendMessage, resetSession } from "../lib/api";
+import { send as sendMessage } from "../lib/api";
 import { preloadFFmpeg } from "../lib/ffmpeg";
 import { initTurnstile } from "../lib/turnstile";
+import { chatIdFromPath, newChatId, loadChat, saveChat } from "../lib/chats";
 import MessageList from "./MessageList.vue";
 import Composer from "./Composer.vue";
 
-const STORAGE_KEY = "reelity.chat.v1";
 const messages = ref<ChatMessage[]>([]);
 const busy = ref(false);
 const tsEl = ref<HTMLElement>();
+// the chat id lives in the URL (/c/:id); root "/" is always a fresh chat, minted on first send
+const chatId = ref<string | null>(null);
+
+function openFromUrl() {
+  chatId.value = chatIdFromPath();
+  messages.value = chatId.value ? loadChat(chatId.value) : [];
+  updateTitle();
+}
+
+function updateTitle() {
+  const first = messages.value.find((m) => m.role === "user" && m.text)?.text;
+  document.title = first ? `${first.slice(0, 40)} · Reelity` : "Reelity — drop a link, get a reel";
+}
 
 onMounted(() => {
   preloadFFmpeg();
   if (tsEl.value) initTurnstile(tsEl.value);
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) messages.value = (JSON.parse(raw) as ChatMessage[]).map((m) => ({ ...m, pending: false }));
-  } catch {}
+  openFromUrl();
+  window.addEventListener("popstate", openFromUrl);
 });
+
+onUnmounted(() => window.removeEventListener("popstate", openFromUrl));
 
 const isEmpty = computed(() => messages.value.length === 0);
 
 function persist() {
+  if (!chatId.value) return;
   const keep = messages.value
     .map((m): ChatMessage | null => {
       if (m.role === "user") return m;
@@ -35,17 +49,14 @@ function persist() {
       return m.text || m.job ? m : null;
     })
     .filter((m): m is ChatMessage => m !== null);
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(keep));
-  } catch {}
+  saveChat(chatId.value, keep);
 }
 
-function clearChat() {
+function newChat() {
+  if (location.pathname !== "/") history.pushState({}, "", "/");
+  chatId.value = null;
   messages.value = [];
-  resetSession();
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch {}
+  updateTitle();
 }
 
 function buildHistory(): ChatTurn[] {
@@ -65,13 +76,19 @@ async function send(text: string) {
   if (busy.value || !text.trim()) return;
   busy.value = true;
 
-  const history = buildHistory();
+  if (!chatId.value) {
+    chatId.value = newChatId();
+    history.pushState({}, "", `/c/${chatId.value}`);
+  }
+
+  const turns = buildHistory();
   messages.value.push({ id: nanoid(), role: "user", text, createdAt: Date.now() });
   messages.value.push({ id: nanoid(), role: "assistant", pending: true, createdAt: Date.now() });
   const live = messages.value[messages.value.length - 1];
+  updateTitle();
 
   try {
-    const result = await sendMessage(text, history, (job) => {
+    const result = await sendMessage(text, turns, chatId.value, (job) => {
       live.pending = false;
       live.job = job;
     });

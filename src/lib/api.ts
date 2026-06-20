@@ -1,34 +1,13 @@
-import { nanoid } from "nanoid";
 import type { ChatTurn, Job, JobStatus } from "./types";
 import { renderJob } from "./ffmpeg";
 import { getTurnstileToken } from "./turnstile";
 
 export type SendResult = { kind: "reply"; text: string } | { kind: "job"; job: Job };
 
-const SESSION_KEY = "reelity.session.v1";
-
-function sessionId(): string {
-  try {
-    let s = localStorage.getItem(SESSION_KEY);
-    if (!s) {
-      s = nanoid();
-      localStorage.setItem(SESSION_KEY, s);
-    }
-    return s;
-  } catch {
-    return "anon";
-  }
-}
-
-export function resetSession(): void {
-  try {
-    localStorage.removeItem(SESSION_KEY);
-  } catch {}
-}
-
 export async function send(
   message: string,
   history: ChatTurn[],
+  sessionId: string,
   onStep?: (job: Job) => void,
 ): Promise<SendResult> {
   const turnstileToken = await getTurnstileToken();
@@ -47,7 +26,7 @@ export async function send(
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ message, sessionId: sessionId(), turnstileToken, history }),
+      body: JSON.stringify({ message, sessionId, turnstileToken, history }),
     });
     if (!res.ok) throw new Error(res.status === 403 ? "bot check failed — refresh and retry" : `request failed (${res.status})`);
     data = (await res.json()) as SendResult;
