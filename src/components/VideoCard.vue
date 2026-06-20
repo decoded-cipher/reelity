@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import type { Job } from "../lib/types";
+import { downloadVideo } from "../lib/share";
+import ShareModal from "./ShareModal.vue";
 
 const props = defineProps<{ job: Job }>();
 const emit = defineEmits<{ remix: [] }>();
@@ -23,12 +25,16 @@ const videoUrl = computed(() => props.job.videoUrl);
 const handle = computed(
   () => "@" + (spec.value?.productName ?? "product").toLowerCase().replace(/[^a-z0-9]/g, ""),
 );
+const slug = computed(() => (spec.value?.productName ?? "reelity").toLowerCase().replace(/[^a-z0-9]/g, ""));
+const downloadName = computed(() => `${slug.value}-reel.mp4`);
 const shareUrl = computed(() => {
   const u = props.job.videoUrl;
   if (u) return u.startsWith("http") ? u : `${location.origin}${u}`;
-  return `${location.origin}/v/${props.job.id || "preview"}`;
+  return `${location.origin}/v/${props.job.id || "preview"}.mp4`;
 });
-const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+// real file when we have it, else the R2-served URL (survives reloads / blob loss)
+const downloadUrl = computed(() => videoUrl.value ?? shareUrl.value);
+const shareText = computed(() => caption.value || `Check out this ${spec.value?.productName ?? "product"} reel`);
 
 const details = computed(() => [
   { k: "model", v: props.job.model ?? "—" },
@@ -43,41 +49,19 @@ const details = computed(() => [
 ]);
 
 const showDetails = ref(false);
+const showShare = ref(false);
 const copied = ref(false);
 
 async function copy() {
-  await navigator.clipboard.writeText(shareUrl.value);
-  copied.value = true;
-  setTimeout(() => (copied.value = false), 1400);
-}
-
-async function download() {
-  if (!videoUrl.value) return;
-  const name = `${(spec.value?.productName ?? "reelity").toLowerCase().replace(/[^a-z0-9]/g, "")}-reel.mp4`;
   try {
-    const blob = await (await fetch(videoUrl.value)).blob();
-    const href = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = href;
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(href);
-  } catch {
-    window.open(videoUrl.value, "_blank");
-  }
-}
-
-
-async function share() {
-  try {
-    await navigator.share({
-      title: `${spec.value?.productName ?? "Reelity"} reel`,
-      text: caption.value,
-      url: shareUrl.value,
-    });
+    await navigator.clipboard.writeText(shareUrl.value);
+    copied.value = true;
+    setTimeout(() => (copied.value = false), 1400);
   } catch {}
+}
+
+function download() {
+  downloadVideo(downloadUrl.value, downloadName.value);
 }
 </script>
 
@@ -129,16 +113,14 @@ async function share() {
 
         <div class="mt-3 flex flex-wrap gap-1.5">
           <button
-            v-if="videoUrl"
             class="press inline-flex items-center gap-1 rounded-[7px] border-2 border-[#0a0a0a] bg-[#c6f000] px-2.5 py-1 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
             @click="download"
           >
             ↓ download
           </button>
           <button
-            v-if="videoUrl && canShare"
             class="press inline-flex items-center gap-1 rounded-[7px] border-2 border-[#0a0a0a] bg-white px-2.5 py-1 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
-            @click="share"
+            @click="showShare = true"
           >
             ↗ share
           </button>
@@ -184,5 +166,14 @@ async function share() {
         </span>
       </div>
     </div>
+
+    <ShareModal
+      v-if="showShare"
+      :url="shareUrl"
+      :text="shareText"
+      :title="`${spec?.productName ?? 'Reelity'} reel`"
+      :download-name="downloadName"
+      @close="showShare = false"
+    />
   </div>
 </template>
