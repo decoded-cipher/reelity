@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { nanoid } from "nanoid";
-import type { ChatMessage } from "../lib/types";
+import type { ChatMessage, ChatTurn } from "../lib/types";
 import { send as sendMessage, resetSession } from "../lib/api";
 import { preloadFFmpeg } from "../lib/ffmpeg";
 import { initTurnstile } from "../lib/turnstile";
@@ -48,16 +48,30 @@ function clearChat() {
   } catch {}
 }
 
+function buildHistory(): ChatTurn[] {
+  const turns: ChatTurn[] = [];
+  for (const m of messages.value) {
+    if (m.pending) continue;
+    if (m.role === "user" && m.text) turns.push({ role: "user", content: m.text });
+    else if (m.role === "assistant") {
+      if (m.text) turns.push({ role: "assistant", content: m.text });
+      else if (m.job?.spec) turns.push({ role: "assistant", content: `made a reel — caption: "${m.job.spec.caption}"` });
+    }
+  }
+  return turns.slice(-8);
+}
+
 async function send(text: string) {
   if (busy.value || !text.trim()) return;
   busy.value = true;
 
+  const history = buildHistory();
   messages.value.push({ id: nanoid(), role: "user", text, createdAt: Date.now() });
   messages.value.push({ id: nanoid(), role: "assistant", pending: true, createdAt: Date.now() });
   const live = messages.value[messages.value.length - 1];
 
   try {
-    const result = await sendMessage(text, (job) => {
+    const result = await sendMessage(text, history, (job) => {
       live.pending = false;
       live.job = job;
     });

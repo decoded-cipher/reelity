@@ -1,7 +1,7 @@
 import { generateText, type LanguageModel } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import type { RenderSpec } from "../src/lib/types";
+import type { ChatTurn, RenderSpec } from "../src/lib/types";
 import type { SiteContext } from "./scrape";
 
 const DEFAULTS = {
@@ -27,8 +27,9 @@ export async function buildSpec(
   env: Env,
   message: string,
   site: SiteContext | null,
+  history: ChatTurn[] = [],
 ): Promise<SpecResult> {
-  const { system, user } = buildPrompt(message, site);
+  const { system, user } = buildPrompt(message, site, history);
   const model = sdkModel(env);
   if (model) {
     try {
@@ -86,7 +87,7 @@ export async function workersAi(env: Env, system: string, user: string): Promise
   return out.response ?? "";
 }
 
-function buildPrompt(message: string, site: SiteContext | null) {
+function buildPrompt(message: string, site: SiteContext | null, history: ChatTurn[] = []) {
   const system = [
     "You are a viral short-form video scriptwriter for TikTok, Reels, and Shorts.",
     "Given a product, design ONE 5-10 second vertical UGC-style video that is genuinely funny or clever and feels native to current short-form trends — the kind a creator would actually post and people would screenshot.",
@@ -106,9 +107,19 @@ function buildPrompt(message: string, site: SiteContext | null) {
     'The caption is the whole joke. Write ONE relatable line in a current meme frame — "me when…", "pov:", "nobody:", "when you…" — that name-drops the product and pokes at what it actually does. Lowercase, casual, max ~12 words, at most one emoji.',
     'Pick "reaction" for most pitches (a full-frame reaction clip carries it); pick "composite" when a scenic background with a small reaction GIF on top fits the bit better.',
     "Make the humor specific to THIS product. No corporate slogans, no generic hype.",
+    "If the conversation shows a previous reel and the user is refining it, keep what works and apply their change.",
   ].join("\n");
 
-  const user = [`Founder's pitch: "${message}"`, "", siteSummary(site), "", "Write the video."].join("\n");
+  const convo = history.length
+    ? `Conversation so far:\n${history.map((h) => `${h.role}: ${h.content}`).join("\n")}\n\n`
+    : "";
+  const user = [
+    `${convo}Founder's latest message: "${message}"`,
+    "",
+    siteSummary(site),
+    "",
+    "Write the video.",
+  ].join("\n");
   return { system, user };
 }
 

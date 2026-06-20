@@ -1,4 +1,5 @@
 import { generateText } from "ai";
+import type { ChatTurn } from "../src/lib/types";
 import { sdkModel, workersAi } from "./brain";
 import { normalizeUrl } from "./scrape";
 
@@ -11,9 +12,11 @@ const SYSTEM = [
   'Choose "generate" only when the message gives a concrete product, app, brand, or website to make a video for — a URL or a clear product pitch. Set "reply" to "" in that case.',
   'Choose "chat" for greetings, small talk, thanks, or questions like "what can you do" — anything that is not a concrete product to promote. Write a warm, natural reply in 1-3 sentences.',
   "When chatting, make clear you create short-form UGC videos from a product URL or description, and invite them to share one with a link. Never invent a product; if unsure, choose chat and ask for the product and link.",
+  'If the conversation already produced a reel and the user is refining it ("make it funnier", "change the background", "shorter"), choose "generate".',
 ].join("\n");
 
-export async function route(env: Env, message: string): Promise<Route> {
+export async function route(env: Env, message: string, history: ChatTurn[] = []): Promise<Route> {
+  const prompt = withHistory(history, message);
   const model = sdkModel(env);
   if (model) {
     try {
@@ -21,7 +24,7 @@ export async function route(env: Env, message: string): Promise<Route> {
         await generateText({
           model,
           system: SYSTEM,
-          prompt: message,
+          prompt,
           temperature: 0.7,
           maxOutputTokens: 300,
           abortSignal: AbortSignal.timeout(15000),
@@ -32,10 +35,16 @@ export async function route(env: Env, message: string): Promise<Route> {
     } catch {}
   }
   try {
-    const parsed = parseRoute(await workersAi(env, SYSTEM, message));
+    const parsed = parseRoute(await workersAi(env, SYSTEM, prompt));
     if (parsed) return parsed;
   } catch {}
   return heuristicRoute(message);
+}
+
+function withHistory(history: ChatTurn[], message: string): string {
+  if (!history.length) return message;
+  const convo = history.map((h) => `${h.role}: ${h.content}`).join("\n");
+  return `Conversation so far:\n${convo}\n\nLatest user message:\n${message}`;
 }
 
 function parseRoute(raw: string): Route | null {

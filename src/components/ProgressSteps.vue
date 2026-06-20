@@ -43,7 +43,14 @@ function state(i: number): "done" | "active" | "pending" {
       </li>
     </ul>
 
-    <div class="mt-4 h-3 w-full overflow-hidden rounded-[5px] border-2 border-[#0a0a0a] bg-white">
+    <div class="mt-4 flex items-center justify-between font-mono text-[11px] font-bold uppercase tracking-wider">
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#0a0a0a]" />
+        {{ RENDER_STEPS[Math.min(current, RENDER_STEPS.length - 1)]?.label ?? "working" }}…
+      </span>
+      <span>{{ job.progress }}%</span>
+    </div>
+    <div class="mt-1.5 h-3 w-full overflow-hidden rounded-[5px] border-2 border-[#0a0a0a] bg-white">
       <div
         class="h-full bg-[#c6f000] transition-all duration-500 ease-out"
         :style="{ width: `${job.progress}%` }"

@@ -58,7 +58,13 @@ export interface Job {
   videoUrl?: string;
   poster?: string;
   concept?: string;
+  model?: string;
   error?: string;
+}
+
+export interface ChatTurn {
+  role: Role;
+  content: string;
 }
 
 export interface ChatMessage {

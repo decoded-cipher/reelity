@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { nanoid } from "nanoid";
-import type { Job, ResolvedAssets } from "../src/lib/types";
+import type { ChatTurn, Job, ResolvedAssets } from "../src/lib/types";
 import { brainProvider, buildSpec } from "./brain";
 import { route } from "./converse";
 import { resolveAssets } from "./assets";
@@ -12,7 +12,12 @@ const app = new Hono<{ Bindings: Env }>();
 app.get("/api/health", (c) => c.json({ ok: true }));
 
 app.post("/api/chat", async (c) => {
-  const body = await c.req.json<{ message?: string; sessionId?: string; turnstileToken?: string }>();
+  const body = await c.req.json<{
+    message?: string;
+    sessionId?: string;
+    turnstileToken?: string;
+    history?: ChatTurn[];
+  }>();
   if (!body.message?.trim()) return c.json({ error: "message required" }, 400);
 
   const ok = await verifyTurnstile(c.env, body.turnstileToken, c.req.header("cf-connecting-ip"));
@@ -20,9 +25,12 @@ app.post("/api/chat", async (c) => {
 
   const text = body.message.trim();
   const sessionId = body.sessionId;
+  const history = (Array.isArray(body.history) ? body.history : [])
+    .filter((h) => h && typeof h.content === "string" && (h.role === "user" || h.role === "assistant"))
+    .slice(-8);
   const log = (p: Promise<unknown>) => c.executionCtx.waitUntil(p.catch(() => {}));
 
-  const decision = await route(c.env, text);
+  const decision = await route(c.env, text, history);
   if (decision.action === "chat") {
     log(
       insertGeneration(c.env.DB, {
@@ -39,7 +47,7 @@ app.post("/api/chat", async (c) => {
 
   const url = normalizeUrl(text);
   const site = url ? await scrapeSite(url) : null;
-  const { spec, source } = await buildSpec(c.env, text, site);
+  const { spec, source } = await buildSpec(c.env, text, site, history);
   const assets = await resolveAssets(c.env, spec, site);
   const id = nanoid();
 
@@ -68,6 +76,7 @@ app.post("/api/chat", async (c) => {
     spec,
     assets: proxify(assets),
     concept: spec.concept,
+    model: source,
   };
   return c.json({ kind: "job", job });
 });
