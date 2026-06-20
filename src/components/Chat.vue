@@ -40,14 +40,19 @@ async function send(text: string) {
 </script>
 
 <template>
-  <div class="flex h-dvh flex-col bg-zinc-950 text-zinc-100">
-    <header class="shrink-0 border-b border-white/5 px-4 py-3">
-      <div class="mx-auto flex max-w-2xl items-center gap-2">
-        <span class="text-lg">🎬</span>
-        <span
-          class="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text font-black tracking-tight text-transparent"
-        >
-          Reelity
+  <div class="flex h-dvh flex-col text-[#0a0a0a]">
+    <header class="shrink-0 border-b-2 border-[#0a0a0a] bg-white">
+      <div class="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+        <div class="flex items-center gap-2.5">
+          <span class="font-display text-xl font-bold tracking-tight">REELITY</span>
+          <span
+            class="rounded-[5px] border-2 border-[#0a0a0a] bg-[#c6f000] px-1.5 py-px font-mono text-[10px] font-bold uppercase leading-tight"
+          >
+            ugc
+          </span>
+        </div>
+        <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-[#0a0a0a]/55">
+          pitch in · reel out
         </span>
       </div>
     </header>

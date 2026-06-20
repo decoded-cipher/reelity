@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+:root {
+  --ink: #0a0a0a;
+  --paper: #f5f2e9;
+  --accent: #c6f000;
+  --coral: #ff5a3c;
+}
+
 html,
 body,
 #app {
@@ -7,7 +14,44 @@ body,
 }
 
 body {
-  background: #09090b;
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: radial-gradient(rgba(10, 10, 10, 0.07) 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* brutalist surfaces */
+.brut {
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 3px 3px 0 0 var(--ink);
+}
+.brut-lg {
+  box-shadow: 5px 5px 0 0 var(--ink);
+}
+
+.press {
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+.press:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 0 var(--ink);
+}
+.press:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 var(--ink);
+}
+.press:disabled {
+  opacity: 0.4;
 }
 
 @keyframes spin {
@@ -15,37 +59,11 @@ body {
     transform: rotate(360deg);
   }
 }
-
-@keyframes pop {
-  0% {
-    opacity: 0;
-    transform: translateY(8px) scale(0.96);
-  }
-  60% {
-    transform: translateY(0) scale(1.03);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(6deg);
-  }
-  50% {
-    transform: translateY(-10px) rotate(-4deg);
-  }
-}
-
 @keyframes kenburns {
   to {
     transform: scale(1.15);
   }
 }
-
 @keyframes scrub {
   from {
     width: 0%;
@@ -54,19 +72,25 @@ body {
     width: 100%;
   }
 }
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(3deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(-3deg);
+  }
+}
 
 .anim-spin {
   animation: spin 0.8s linear infinite;
-}
-.anim-pop {
-  animation: pop 0.35s ease-out both;
-}
-.anim-float {
-  animation: float 2.6s ease-in-out infinite;
 }
 .anim-kenburns {
   animation: kenburns 8s ease-in-out infinite alternate;
 }
 .anim-scrub {
   animation: scrub 6s linear infinite;
+}
+.anim-float {
+  animation: float 2.6s ease-in-out infinite;
 }

@@ -33,26 +33,34 @@ function remix(i: number) {
   <div ref="scroller" class="flex-1 overflow-y-auto">
     <div
       v-if="!messages.length"
-      class="mx-auto flex h-full max-w-2xl flex-col items-center justify-center px-4 text-center"
+      class="mx-auto flex h-full max-w-2xl flex-col justify-center px-4 py-10"
     >
-      <h1
-        class="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-rose-400 bg-clip-text text-6xl font-black tracking-tight text-transparent"
+      <span
+        class="brut mb-5 w-fit px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-widest"
       >
-        Reelity
+        ai-organized · not ai-generated
+      </span>
+      <h1 class="font-display text-5xl font-bold leading-[0.92] tracking-tight sm:text-[64px]">
+        turn a link<br />
+        into a
+        <span class="inline-block -rotate-1 border-2 border-[#0a0a0a] bg-[#c6f000] px-2 leading-none shadow-[3px_3px_0_0_#0a0a0a]">
+          reel.
+        </span>
       </h1>
-      <p class="mt-3 text-zinc-400">turn your reality into a reel.</p>
-      <p class="mt-6 max-w-md text-sm leading-relaxed text-zinc-500">
-        Tell me what you're building and drop a link. I'll read the site and organize a
-        scroll-stopping UGC reel — background, kinetic captions, trending-style audio, and the
-        perfect GIF.
+      <p class="mt-6 max-w-md text-[15px] leading-relaxed text-[#0a0a0a]/70">
+        Paste a product pitch and a link. I read the site and assemble a vertical UGC video — real
+        clip, trend caption, sound, and the punchline GIF — then drop it right here.
+      </p>
+      <p class="mt-5 font-mono text-[11px] uppercase tracking-widest text-[#0a0a0a]/45">
+        ↓ try one below
       </p>
     </div>
 
-    <div v-else class="mx-auto max-w-2xl space-y-6 px-4 py-6">
+    <div v-else class="mx-auto max-w-2xl space-y-5 px-4 py-6">
       <template v-for="(m, i) in messages" :key="m.id">
         <div v-if="m.role === 'user'" class="flex justify-end">
           <div
-            class="max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-gradient-to-br from-violet-500 to-fuchsia-500 px-4 py-2.5 text-sm text-white shadow-lg shadow-fuchsia-500/10"
+            class="max-w-[80%] whitespace-pre-wrap rounded-[10px] border-2 border-[#0a0a0a] bg-[#0a0a0a] px-4 py-2.5 text-sm font-medium text-white shadow-[3px_3px_0_0_#0a0a0a]"
           >
             {{ m.text }}
           </div>
@@ -61,11 +69,11 @@ function remix(i: number) {
         <div v-else class="flex justify-start">
           <div
             v-if="m.pending"
-            class="flex items-center gap-1 rounded-2xl rounded-bl-md bg-zinc-800/70 px-4 py-3.5"
+            class="flex items-center gap-1.5 rounded-[10px] border-2 border-[#0a0a0a] bg-white px-4 py-3.5 shadow-[3px_3px_0_0_#0a0a0a]"
           >
-            <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:0ms]" />
-            <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:150ms]" />
-            <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:300ms]" />
+            <span class="h-2 w-2 animate-bounce rounded-full bg-[#0a0a0a] [animation-delay:0ms]" />
+            <span class="h-2 w-2 animate-bounce rounded-full bg-[#0a0a0a] [animation-delay:150ms]" />
+            <span class="h-2 w-2 animate-bounce rounded-full bg-[#0a0a0a] [animation-delay:300ms]" />
           </div>
           <ProgressSteps v-else-if="running(m)" :job="m.job!" />
           <VideoCard
@@ -75,13 +83,13 @@ function remix(i: number) {
           />
           <div
             v-else-if="m.job && m.job.status === 'failed'"
-            class="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200"
+            class="rounded-[10px] border-2 border-[#0a0a0a] bg-[#ff5a3c] px-4 py-3 text-sm font-semibold text-[#0a0a0a] shadow-[3px_3px_0_0_#0a0a0a]"
           >
-            Couldn't build that reel — {{ m.job.error }}
+            couldn't build that reel — {{ m.job.error }}
           </div>
           <div
             v-else-if="m.text"
-            class="max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-zinc-800/70 px-4 py-2.5 text-sm leading-relaxed text-zinc-100"
+            class="max-w-[80%] whitespace-pre-wrap rounded-[10px] border-2 border-[#0a0a0a] bg-white px-4 py-2.5 text-sm leading-relaxed text-[#0a0a0a] shadow-[3px_3px_0_0_#0a0a0a]"
           >
             {{ m.text }}
           </div>

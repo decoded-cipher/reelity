@@ -39,14 +39,15 @@ function resize() {
 </script>
 
 <template>
-  <div class="shrink-0 border-t border-white/5 bg-zinc-950/80 backdrop-blur">
+  <div class="shrink-0 border-t-2 border-[#0a0a0a] bg-white">
     <div class="mx-auto w-full max-w-2xl px-4 py-3">
       <div v-if="showExamples" class="mb-3 flex flex-wrap gap-2">
         <button
-          v-for="ex in EXAMPLES"
+          v-for="(ex, i) in EXAMPLES"
           :key="ex"
           :disabled="busy"
-          class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-white/20 hover:bg-white/10 disabled:opacity-40"
+          class="press rounded-[7px] border-2 border-[#0a0a0a] px-3 py-1.5 font-mono text-xs font-medium shadow-[2px_2px_0_0_#0a0a0a]"
+          :class="i === 0 ? 'bg-[#c6f000]' : 'bg-white'"
           @click="emit('send', ex)"
         >
           {{ ex }}
@@ -54,30 +55,30 @@ function resize() {
       </div>
 
       <div
-        class="flex items-end gap-2 rounded-2xl border border-white/10 bg-zinc-900/80 p-2 transition focus-within:border-violet-400/40"
+        class="flex items-end gap-2 rounded-[10px] border-2 border-[#0a0a0a] bg-white p-2 shadow-[3px_3px_0_0_#0a0a0a] transition-shadow focus-within:shadow-[5px_5px_0_0_#0a0a0a]"
       >
         <textarea
           ref="area"
           v-model="text"
           rows="1"
           :disabled="busy"
-          placeholder="Message Reelity… or describe your product and drop a link"
-          class="max-h-48 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none disabled:opacity-50"
+          placeholder="describe your product and drop a link…"
+          class="max-h-48 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm text-[#0a0a0a] placeholder:text-[#0a0a0a]/40 focus:outline-none disabled:opacity-50"
           @input="resize"
           @keydown="onKeydown"
         />
         <button
           :disabled="!canSend"
-          class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-fuchsia-500/20 transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-30"
+          class="press grid h-9 w-9 shrink-0 place-items-center rounded-[7px] border-2 border-[#0a0a0a] bg-[#0a0a0a] text-white shadow-[2px_2px_0_0_#0a0a0a] disabled:cursor-not-allowed"
           @click="submit"
         >
-          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.2">
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.4">
             <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </button>
       </div>
-      <p class="mt-2 px-1 text-center text-[11px] text-zinc-600">
-        Reelity organizes real clips, captions, audio &amp; GIFs into a vertical reel.
+      <p class="mt-2 px-1 text-center font-mono text-[10px] uppercase tracking-widest text-[#0a0a0a]/45">
+        real clips · trend captions · sound · gif — rendered in your browser
       </p>
     </div>
   </div>
