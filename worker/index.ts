@@ -4,7 +4,7 @@ import type { ChatMessage, ChatTurn, Job, RenderSpec, ResolvedAssets } from "../
 import { brainProvider, buildSpec } from "./brain";
 import { route } from "./converse";
 import { resolveAssets } from "./assets";
-import { getThread, insertGeneration, listHistory, setVideoUrl, type ThreadRow } from "./db";
+import { getThread, insertGeneration, setVideoUrl, type ThreadRow } from "./db";
 import { normalizeUrl, scrapeSite } from "./scrape";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -104,15 +104,6 @@ async function verifyTurnstile(
   }
 }
 
-app.get("/api/history", async (c) => {
-  try {
-    const items = await listHistory(c.env.DB, c.req.query("session") ?? null);
-    return c.json({ items });
-  } catch {
-    return c.json({ items: [] });
-  }
-});
-
 app.get("/api/thread/:session", async (c) => {
   try {
     const rows = await getThread(c.env.DB, c.req.param("session"));
@@ -151,6 +142,7 @@ function parseJson<T>(s: string | null): T | null {
   }
 }
 
+const MAX_ASSET_BYTES = 80 * 1024 * 1024;
 const ALLOWED = ["pexels.com", "giphy.com", "jamendo.com", "picsum.photos", "wikimedia.org", "openverse.org"];
 const allowedHost = (h: string) => ALLOWED.some((d) => h === d || h.endsWith(`.${d}`));
 const proxyUrl = (u?: string) => (u ? `/api/asset?u=${encodeURIComponent(u)}` : u);
@@ -176,10 +168,29 @@ app.get("/api/asset", async (c) => {
 
   const upstream = await fetch(target.toString(), { signal: AbortSignal.timeout(20000) });
   if (!upstream.ok || !upstream.body) return c.text("upstream error", 502);
-  return new Response(upstream.body, {
+
+  const ctype = upstream.headers.get("content-type") || "";
+  const mediaType = ctype.split(";")[0].trim().toLowerCase();
+  if (!/^(image|video|audio)\//.test(mediaType) || mediaType === "image/svg+xml")
+    return c.text("unsupported media type", 415);
+
+  const declared = Number(upstream.headers.get("content-length"));
+  if (declared && declared > MAX_ASSET_BYTES) return c.text("asset too large", 502);
+
+  let seen = 0;
+  const cap = new TransformStream<Uint8Array>({
+    transform(chunk, ctrl) {
+      seen += chunk.byteLength;
+      if (seen > MAX_ASSET_BYTES) ctrl.error(new Error("asset too large"));
+      else ctrl.enqueue(chunk);
+    },
+  });
+
+  return new Response(upstream.body.pipeThrough(cap), {
     headers: {
-      "content-type": upstream.headers.get("content-type") || "application/octet-stream",
+      "content-type": ctype,
       "cache-control": "public, max-age=86400",
+      "x-content-type-options": "nosniff",
     },
   });
 });
