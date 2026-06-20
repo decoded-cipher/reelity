@@ -40,13 +40,13 @@ function resize() {
 
 <template>
   <div class="shrink-0 border-t-2 border-[#0a0a0a] bg-white">
-    <div class="mx-auto w-full max-w-5xl px-5 py-4">
-      <div v-if="showExamples" class="mb-3 flex flex-wrap gap-2">
+    <div class="mx-auto w-full max-w-5xl px-4 py-3 sm:px-5 sm:py-4">
+      <div v-if="showExamples" class="mb-2.5 flex flex-wrap gap-2">
         <button
           v-for="(ex, i) in EXAMPLES"
           :key="ex"
           :disabled="busy"
-          class="press rounded-[8px] border-2 border-[#0a0a0a] px-3 py-1.5 font-mono text-[13px] font-medium shadow-[2px_2px_0_0_#0a0a0a] sm:px-3.5 sm:py-2 sm:text-sm"
+          class="press rounded-[8px] border-2 border-[#0a0a0a] px-3 py-1.5 font-mono text-[13px] font-medium shadow-[2px_2px_0_0_#0a0a0a] sm:text-sm"
           :class="i === 0 ? 'bg-[#c6f000]' : 'bg-white'"
           @click="emit('send', ex)"
         >
@@ -55,29 +55,29 @@ function resize() {
       </div>
 
       <div
-        class="flex items-end gap-2.5 rounded-[14px] border-[3px] border-[#0a0a0a] bg-white p-2.5 shadow-[5px_5px_0_0_#0a0a0a] transition-shadow focus-within:shadow-[8px_8px_0_0_#0a0a0a]"
+        class="flex items-end gap-2 rounded-[12px] border-[3px] border-[#0a0a0a] bg-white p-1.5 shadow-[4px_4px_0_0_#0a0a0a] transition-shadow focus-within:shadow-[6px_6px_0_0_#0a0a0a]"
       >
         <textarea
           ref="area"
           v-model="text"
           rows="1"
           :disabled="busy"
-          placeholder="Tell me what you're building + paste a link…"
-          class="max-h-48 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-base leading-snug text-[#0a0a0a] placeholder:text-[#0a0a0a]/40 focus:outline-none disabled:opacity-50 sm:text-[17px]"
+          placeholder="Tell me what you're building…"
+          class="max-h-40 flex-1 resize-none bg-transparent px-2.5 py-2 text-[15px] leading-snug text-[#0a0a0a] placeholder:text-[#0a0a0a]/40 focus:outline-none disabled:opacity-50"
           @input="resize"
           @keydown="onKeydown"
         />
         <button
           :disabled="!canSend"
-          class="press grid h-12 w-12 shrink-0 place-items-center rounded-[10px] border-2 border-[#0a0a0a] bg-[#0a0a0a] text-white shadow-[2px_2px_0_0_#0a0a0a] disabled:cursor-not-allowed"
+          class="press grid h-9 w-9 shrink-0 place-items-center rounded-[9px] border-2 border-[#0a0a0a] bg-[#0a0a0a] text-white shadow-[2px_2px_0_0_#0a0a0a] disabled:cursor-not-allowed disabled:bg-[#0a0a0a]/30"
           @click="submit"
         >
-          <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.4">
+          <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2.6">
             <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </button>
       </div>
-      <p class="mt-2.5 px-1 text-center font-mono text-[11px] uppercase tracking-widest text-[#0a0a0a]/45">
+      <p class="mt-2 hidden px-1 text-center font-mono text-[11px] uppercase tracking-widest text-[#0a0a0a]/45 sm:block">
         real clips · trend captions · sound · gif — rendered in your browser
       </p>
     </div>

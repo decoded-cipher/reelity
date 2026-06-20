@@ -121,23 +121,38 @@ function download() {
 
         <div class="space-y-1.5">
           <button
-            class="press flex w-full items-center justify-center gap-1 rounded-[8px] border-2 border-[#0a0a0a] bg-[#c6f000] px-3 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
+            class="press flex w-full items-center justify-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-[#c6f000] px-3 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
             @click="download"
           >
-            ↓ download
+            <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            download
           </button>
-          <div class="grid grid-cols-2 gap-1.5">
+          <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
             <button
-              class="press flex items-center justify-center gap-1 rounded-[8px] border-2 border-[#0a0a0a] bg-white px-2 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
+              class="press flex items-center justify-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-white px-2 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
               @click="showShare = true"
             >
-              ↗ share
+              <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+              share
             </button>
             <button
-              class="press flex items-center justify-center gap-1 rounded-[8px] border-2 border-[#0a0a0a] bg-white px-2 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
+              class="press flex items-center justify-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-white px-2 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
               @click="emit('remix')"
             >
-              ⟳ regen
+              <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+              regenerate
             </button>
           </div>
           <div class="flex items-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-[#f5f2e9] px-2 py-1.5">

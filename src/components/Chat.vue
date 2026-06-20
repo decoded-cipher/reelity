@@ -116,16 +116,11 @@ async function send(text: string) {
             <svg viewBox="0 0 24 24" class="h-3.5 w-3.5"><path d="M8 5 L8 19 L19 12 Z" fill="#0a0a0a" /></svg>
           </span>
           <span class="font-display text-xl font-bold tracking-tight">REELITY</span>
-          <span
-            class="rounded-[5px] border-2 border-[#0a0a0a] bg-[#c6f000] px-1.5 py-px font-mono text-[10px] font-bold uppercase leading-tight"
-          >
-            ugc
-          </span>
         </div>
         <button
           v-if="!isEmpty"
           class="press flex items-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-[#c6f000] px-3 py-1.5 font-mono text-[11px] font-bold uppercase shadow-[2px_2px_0_0_#0a0a0a] sm:px-4 sm:text-xs"
-          @click="clearChat"
+          @click="newChat"
         >
           <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="#0a0a0a" stroke-width="3">
             <path d="M12 5v14M5 12h14" stroke-linecap="round" />
