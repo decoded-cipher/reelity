@@ -56,7 +56,6 @@ export interface Job {
   spec?: RenderSpec;
   assets?: ResolvedAssets;
   videoUrl?: string;
-  poster?: string;
   concept?: string;
   model?: string;
   error?: string;
