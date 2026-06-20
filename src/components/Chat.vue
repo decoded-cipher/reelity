@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { nanoid } from "nanoid";
 import type { ChatMessage } from "../lib/types";
 import { send as sendMessage } from "../lib/api";
+import { preloadFFmpeg } from "../lib/ffmpeg";
 import MessageList from "./MessageList.vue";
 import Composer from "./Composer.vue";
 
 const messages = ref<ChatMessage[]>([]);
 const busy = ref(false);
+
+onMounted(() => preloadFFmpeg());
 
 const isEmpty = computed(() => messages.value.length === 0);
 
