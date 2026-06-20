@@ -40,7 +40,7 @@ function remix(i: number) {
   <div ref="scroller" class="flex-1 overflow-y-auto">
     <div
       v-if="!messages.length"
-      class="mx-auto flex min-h-full max-w-3xl flex-col justify-center px-5 py-12"
+      class="mx-auto flex min-h-full max-w-5xl flex-col justify-center px-5 py-12"
     >
       <span
         class="brut mb-6 w-fit px-2.5 py-1 font-mono text-xs font-bold uppercase tracking-widest"
@@ -72,7 +72,7 @@ function remix(i: number) {
       </p>
     </div>
 
-    <div v-else class="mx-auto max-w-2xl space-y-5 px-4 py-6">
+    <div v-else class="mx-auto max-w-5xl space-y-5 px-5 py-6">
       <template v-for="(m, i) in messages" :key="m.id">
         <div v-if="m.role === 'user'" class="flex justify-end">
           <div

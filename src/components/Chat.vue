@@ -91,7 +91,7 @@ async function send(text: string) {
 <template>
   <div class="flex h-dvh flex-col text-[#0a0a0a]">
     <header class="shrink-0 border-b-2 border-[#0a0a0a] bg-white">
-      <div class="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+      <div class="mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
         <div class="flex items-center gap-2.5">
           <span
             class="grid h-7 w-7 place-items-center rounded-[7px] border-2 border-[#0a0a0a] bg-[#c6f000] shadow-[2px_2px_0_0_#0a0a0a]"
@@ -105,23 +105,21 @@ async function send(text: string) {
             ugc
           </span>
         </div>
-        <div class="flex items-center gap-3">
-          <button
-            v-if="!isEmpty"
-            class="press rounded-[6px] border-2 border-[#0a0a0a] bg-white px-2 py-1 font-mono text-[10px] font-bold uppercase shadow-[2px_2px_0_0_#0a0a0a]"
-            @click="clearChat"
-          >
-            new
-          </button>
-          <span class="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-[#0a0a0a]/55 sm:inline">
-            pitch in · reel out
-          </span>
-        </div>
+        <button
+          v-if="!isEmpty"
+          class="press flex items-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-[#c6f000] px-3 py-1.5 font-mono text-[11px] font-bold uppercase shadow-[2px_2px_0_0_#0a0a0a] sm:px-4 sm:text-xs"
+          @click="clearChat"
+        >
+          <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="#0a0a0a" stroke-width="3">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          new chat
+        </button>
       </div>
     </header>
 
     <MessageList :messages="messages" @remix="send" />
-    <div ref="tsEl" class="mx-auto flex max-w-2xl justify-center px-4 empty:hidden" />
+    <div ref="tsEl" class="mx-auto flex max-w-5xl justify-center px-5 empty:hidden" />
     <Composer :busy="busy" :show-examples="isEmpty" @send="send" />
   </div>
 </template>

@@ -51,15 +51,22 @@ async function copy() {
   setTimeout(() => (copied.value = false), 1400);
 }
 
-function download() {
+async function download() {
   if (!videoUrl.value) return;
-  const href = videoUrl.value.startsWith("blob:") ? videoUrl.value : `/v/${props.job.id}.mp4`;
-  const a = document.createElement("a");
-  a.href = href;
-  a.download = `${(spec.value?.productName ?? "reelity").toLowerCase().replace(/[^a-z0-9]/g, "")}-reel.mp4`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  const name = `${(spec.value?.productName ?? "reelity").toLowerCase().replace(/[^a-z0-9]/g, "")}-reel.mp4`;
+  try {
+    const blob = await (await fetch(videoUrl.value)).blob();
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(href);
+  } catch {
+    window.open(videoUrl.value, "_blank");
+  }
 }
 
 

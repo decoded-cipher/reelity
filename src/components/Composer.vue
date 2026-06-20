@@ -40,7 +40,7 @@ function resize() {
 
 <template>
   <div class="shrink-0 border-t-2 border-[#0a0a0a] bg-white">
-    <div class="mx-auto w-full max-w-3xl px-4 py-4">
+    <div class="mx-auto w-full max-w-5xl px-5 py-4">
       <div v-if="showExamples" class="mb-3 flex flex-wrap gap-2">
         <button
           v-for="(ex, i) in EXAMPLES"
