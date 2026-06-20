@@ -4,7 +4,8 @@
   "compatibility_date": "2026-06-18",
   "main": "./worker/index.ts",
   "vars": {
-    "BRAIN_PROVIDER": "google"
+    "BRAIN_PROVIDER": "google",
+    "ASSETS_BASE_URL": "https://assets.reelity.arjunkrishna.dev"
   },
   "assets": {
     "binding": "ASSETS",

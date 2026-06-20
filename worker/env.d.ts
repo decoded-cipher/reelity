@@ -7,4 +7,5 @@ interface Env {
   PEXELS_API_KEY?: string;
   GIPHY_API_KEY?: string;
   TURNSTILE_SECRET_KEY?: string;
+  ASSETS_BASE_URL?: string;
 }

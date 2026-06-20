@@ -156,10 +156,10 @@ app.put("/api/videos/:key", async (c) => {
     .first();
   if (!known) return c.text("unknown id", 403);
   await c.env.VIDEOS.put(key, c.req.raw.body, { httpMetadata: { contentType: "video/mp4" } });
-  c.executionCtx.waitUntil(
-    setVideoUrl(c.env.DB, key.replace(/\.mp4$/, ""), `/v/${key}`).catch(() => {}),
-  );
-  return c.json({ url: `/v/${key}` });
+  const base = c.env.ASSETS_BASE_URL?.replace(/\/+$/, "");
+  const url = base ? `${base}/${key}` : `/v/${key}`;
+  c.executionCtx.waitUntil(setVideoUrl(c.env.DB, key.replace(/\.mp4$/, ""), url).catch(() => {}));
+  return c.json({ url });
 });
 
 app.get("/v/:key", async (c) => {

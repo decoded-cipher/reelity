@@ -53,13 +53,15 @@ async function copy() {
 
 function download() {
   if (!videoUrl.value) return;
+  const href = videoUrl.value.startsWith("blob:") ? videoUrl.value : `/v/${props.job.id}.mp4`;
   const a = document.createElement("a");
-  a.href = videoUrl.value;
+  a.href = href;
   a.download = `${(spec.value?.productName ?? "reelity").toLowerCase().replace(/[^a-z0-9]/g, "")}-reel.mp4`;
   document.body.appendChild(a);
   a.click();
   a.remove();
 }
+
 
 async function share() {
   try {
