@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 import { nanoid } from "nanoid";
 import type { ChatMessage, ChatTurn, Job, RenderSpec, ResolvedAssets } from "../src/lib/types";
 import { brainProvider, buildSpec } from "./brain";
@@ -9,9 +9,18 @@ import { normalizeUrl, scrapeSite } from "./scrape";
 
 const app = new Hono<{ Bindings: Env }>();
 
+const rateLimit =
+  (pick: (env: Env) => RateLimit): MiddlewareHandler<{ Bindings: Env }> =>
+  async (c, next) => {
+    const key = c.req.header("cf-connecting-ip") ?? "anon";
+    const { success } = await pick(c.env).limit({ key });
+    if (!success) return c.json({ error: "rate limited" }, 429);
+    await next();
+  };
+
 app.get("/api/health", (c) => c.json({ ok: true }));
 
-app.post("/api/chat", async (c) => {
+app.post("/api/chat", rateLimit((e) => e.CHAT_RL), async (c) => {
   const body = await c.req.json<{
     message?: string;
     sessionId?: string;
@@ -155,7 +164,7 @@ function proxify(a: ResolvedAssets): ResolvedAssets {
   };
 }
 
-app.get("/api/asset", async (c) => {
+app.get("/api/asset", rateLimit((e) => e.ASSET_RL), async (c) => {
   const u = c.req.query("u");
   if (!u) return c.text("missing u", 400);
   let target: URL;
