@@ -45,6 +45,30 @@ export async function setVideoUrl(db: D1Database, id: string, videoUrl: string):
   await db.prepare(`UPDATE generations SET video_url = ? WHERE id = ?`).bind(videoUrl, id).run();
 }
 
+export interface ThreadRow {
+  id: string;
+  prompt: string;
+  action: string;
+  reply: string | null;
+  concept: string | null;
+  spec: string | null;
+  assets: string | null;
+  model: string | null;
+  video_url: string | null;
+  created_at: number;
+}
+
+export async function getThread(db: D1Database, sessionId: string, limit = 100): Promise<ThreadRow[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, prompt, action, reply, concept, spec, assets, model, video_url, created_at
+       FROM generations WHERE session_id = ? ORDER BY created_at ASC LIMIT ?`,
+    )
+    .bind(sessionId, limit)
+    .all<ThreadRow>();
+  return results;
+}
+
 export interface HistoryItem {
   id: string;
   productName: string | null;

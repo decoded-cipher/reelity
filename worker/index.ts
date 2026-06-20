@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { nanoid } from "nanoid";
-import type { ChatTurn, Job, ResolvedAssets } from "../src/lib/types";
+import type { ChatMessage, ChatTurn, Job, RenderSpec, ResolvedAssets } from "../src/lib/types";
 import { brainProvider, buildSpec } from "./brain";
 import { route } from "./converse";
 import { resolveAssets } from "./assets";
-import { insertGeneration, listHistory, setVideoUrl } from "./db";
+import { getThread, insertGeneration, listHistory, setVideoUrl, type ThreadRow } from "./db";
 import { normalizeUrl, scrapeSite } from "./scrape";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -113,6 +113,44 @@ app.get("/api/history", async (c) => {
   }
 });
 
+app.get("/api/thread/:session", async (c) => {
+  try {
+    const rows = await getThread(c.env.DB, c.req.param("session"));
+    return c.json({ messages: rows.flatMap(rebuildTurn) });
+  } catch {
+    return c.json({ messages: [] });
+  }
+});
+
+function rebuildTurn(r: ThreadRow): ChatMessage[] {
+  const out: ChatMessage[] = [{ id: `${r.id}-u`, role: "user", text: r.prompt, createdAt: r.created_at }];
+  if (r.action === "chat") {
+    if (r.reply) out.push({ id: `${r.id}-a`, role: "assistant", text: r.reply, createdAt: r.created_at });
+    return out;
+  }
+  const assets = parseJson<ResolvedAssets>(r.assets);
+  const job: Job = {
+    id: r.id,
+    status: "done",
+    progress: 100,
+    spec: parseJson<RenderSpec>(r.spec) ?? undefined,
+    assets: assets ? proxify(assets) : undefined,
+    videoUrl: r.video_url ?? undefined,
+    concept: r.concept ?? undefined,
+    model: r.model ?? undefined,
+  };
+  out.push({ id: `${r.id}-a`, role: "assistant", job, createdAt: r.created_at });
+  return out;
+}
+
+function parseJson<T>(s: string | null): T | null {
+  try {
+    return s ? (JSON.parse(s) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
 const ALLOWED = ["pexels.com", "giphy.com", "jamendo.com", "picsum.photos", "wikimedia.org", "openverse.org"];
 const allowedHost = (h: string) => ALLOWED.some((d) => h === d || h.endsWith(`.${d}`));
 const proxyUrl = (u?: string) => (u ? `/api/asset?u=${encodeURIComponent(u)}` : u);
@@ -174,7 +212,6 @@ app.get("/v/:key", async (c) => {
   });
 });
 
-// ffmpeg.wasm core served first-party from R2 so ad blockers / CDN outages can't break rendering
 const FFMPEG_FILES: Record<string, string> = {
   "ffmpeg-core.js": "text/javascript",
   "ffmpeg-core.wasm": "application/wasm",

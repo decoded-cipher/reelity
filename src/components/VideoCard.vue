@@ -32,7 +32,6 @@ const shareUrl = computed(() => {
   if (u) return u.startsWith("http") ? u : `${location.origin}${u}`;
   return `${location.origin}/v/${props.job.id || "preview"}.mp4`;
 });
-// real file when we have it, else the R2-served URL (survives reloads / blob loss)
 const downloadUrl = computed(() => videoUrl.value ?? shareUrl.value);
 const shareText = computed(() => {
   const cap = caption.value?.trim();

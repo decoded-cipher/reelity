@@ -23,3 +23,14 @@ export function saveChat(id: string, messages: ChatMessage[]): void {
     localStorage.setItem(PREFIX + id, JSON.stringify(messages));
   } catch {}
 }
+
+export async function fetchChat(id: string): Promise<ChatMessage[]> {
+  try {
+    const res = await fetch(`/api/thread/${id}`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { messages?: ChatMessage[] };
+    return (data.messages ?? []).map((m) => ({ ...m, pending: false }));
+  } catch {
+    return [];
+  }
+}

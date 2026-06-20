@@ -5,20 +5,34 @@ import type { ChatMessage, ChatTurn } from "../lib/types";
 import { send as sendMessage } from "../lib/api";
 import { preloadFFmpeg } from "../lib/ffmpeg";
 import { initTurnstile } from "../lib/turnstile";
-import { chatIdFromPath, newChatId, loadChat, saveChat } from "../lib/chats";
+import { chatIdFromPath, newChatId, loadChat, saveChat, fetchChat } from "../lib/chats";
 import MessageList from "./MessageList.vue";
 import Composer from "./Composer.vue";
 
 const messages = ref<ChatMessage[]>([]);
 const busy = ref(false);
 const tsEl = ref<HTMLElement>();
-// the chat id lives in the URL (/c/:id); root "/" is always a fresh chat, minted on first send
 const chatId = ref<string | null>(null);
 
-function openFromUrl() {
-  chatId.value = chatIdFromPath();
-  messages.value = chatId.value ? loadChat(chatId.value) : [];
+async function openFromUrl() {
+  const id = chatIdFromPath();
+  chatId.value = id;
+  if (!id) {
+    messages.value = [];
+    updateTitle();
+    return;
+  }
+  const local = loadChat(id);
+  messages.value = local;
   updateTitle();
+  if (!local.length) {
+    const remote = await fetchChat(id);
+    if (chatId.value === id && remote.length) {
+      messages.value = remote;
+      saveChat(id, remote);
+      updateTitle();
+    }
+  }
 }
 
 function updateTitle() {
