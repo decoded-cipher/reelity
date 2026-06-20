@@ -14,21 +14,25 @@ const SYSTEM = [
 ].join("\n");
 
 export async function route(env: Env, message: string): Promise<Route> {
+  const model = sdkModel(env);
+  if (model) {
+    try {
+      const raw = (
+        await generateText({
+          model,
+          system: SYSTEM,
+          prompt: message,
+          temperature: 0.7,
+          maxOutputTokens: 300,
+          abortSignal: AbortSignal.timeout(15000),
+        })
+      ).text;
+      const parsed = parseRoute(raw);
+      if (parsed) return parsed;
+    } catch {}
+  }
   try {
-    const model = sdkModel(env);
-    const raw = model
-      ? (
-          await generateText({
-            model,
-            system: SYSTEM,
-            prompt: message,
-            temperature: 0.7,
-            maxOutputTokens: 300,
-            abortSignal: AbortSignal.timeout(15000),
-          })
-        ).text
-      : await workersAi(env, SYSTEM, message);
-    const parsed = parseRoute(raw);
+    const parsed = parseRoute(await workersAi(env, SYSTEM, message));
     if (parsed) return parsed;
   } catch {}
   return heuristicRoute(message);

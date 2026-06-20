@@ -3,6 +3,9 @@
   "name": "reelity",
   "compatibility_date": "2026-06-18",
   "main": "./worker/index.ts",
+  "vars": {
+    "BRAIN_PROVIDER": "google"
+  },
   "assets": {
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",

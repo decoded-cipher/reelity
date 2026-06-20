@@ -29,22 +29,26 @@ export async function buildSpec(
   site: SiteContext | null,
 ): Promise<SpecResult> {
   const { system, user } = buildPrompt(message, site);
+  const model = sdkModel(env);
+  if (model) {
+    try {
+      const raw = (
+        await generateText({
+          model,
+          system,
+          prompt: user,
+          temperature: 0.9,
+          maxOutputTokens: 1024,
+          abortSignal: AbortSignal.timeout(20000),
+        })
+      ).text;
+      const spec = coerceSpec(raw, message, site);
+      if (spec) return { spec, source: brainProvider(env) };
+    } catch {}
+  }
   try {
-    const model = sdkModel(env);
-    const raw = model
-      ? (
-          await generateText({
-            model,
-            system,
-            prompt: user,
-            temperature: 0.9,
-            maxOutputTokens: 1024,
-            abortSignal: AbortSignal.timeout(20000),
-          })
-        ).text
-      : await workersAi(env, system, user);
-    const spec = coerceSpec(raw, message, site);
-    if (spec) return { spec, source: brainProvider(env) };
+    const spec = coerceSpec(await workersAi(env, system, user), message, site);
+    if (spec) return { spec, source: "workers-ai" };
   } catch {}
   return { spec: heuristicSpec(message, site), source: "heuristic" };
 }
