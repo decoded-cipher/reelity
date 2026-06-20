@@ -4,7 +4,7 @@
   "compatibility_date": "2026-06-18",
   "main": "./worker/index.ts",
   "vars": {
-    "BRAIN_PROVIDER": "google",
+    "BRAIN_PROVIDER": "anthropic",
     "ASSETS_BASE_URL": "https://assets.reelity.arjunkrishna.dev"
   },
   "assets": {
