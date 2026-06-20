@@ -2,17 +2,48 @@
 import { ref, computed, onMounted } from "vue";
 import { nanoid } from "nanoid";
 import type { ChatMessage } from "../lib/types";
-import { send as sendMessage } from "../lib/api";
+import { send as sendMessage, resetSession } from "../lib/api";
 import { preloadFFmpeg } from "../lib/ffmpeg";
 import MessageList from "./MessageList.vue";
 import Composer from "./Composer.vue";
 
+const STORAGE_KEY = "reelity.chat.v1";
 const messages = ref<ChatMessage[]>([]);
 const busy = ref(false);
 
-onMounted(() => preloadFFmpeg());
+onMounted(() => {
+  preloadFFmpeg();
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) messages.value = (JSON.parse(raw) as ChatMessage[]).map((m) => ({ ...m, pending: false }));
+  } catch {}
+});
 
 const isEmpty = computed(() => messages.value.length === 0);
+
+function persist() {
+  const keep = messages.value
+    .map((m): ChatMessage | null => {
+      if (m.role === "user") return m;
+      if (m.pending) return null;
+      // blob: URLs don't survive a reload — drop so the card falls back gracefully
+      if (m.job?.videoUrl?.startsWith("blob:")) return { ...m, job: { ...m.job, videoUrl: undefined } };
+      if (m.job && m.job.status !== "done" && m.job.status !== "failed") return null;
+      return m.text || m.job ? m : null;
+    })
+    .filter((m): m is ChatMessage => m !== null);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(keep));
+  } catch {}
+}
+
+function clearChat() {
+  messages.value = [];
+  resetSession();
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {}
+}
 
 async function send(text: string) {
   if (busy.value || !text.trim()) return;
@@ -35,6 +66,7 @@ async function send(text: string) {
     live.job = { id: nanoid(), status: "failed", progress: 0, error: (e as Error).message };
   } finally {
     busy.value = false;
+    persist();
   }
 }
 </script>
@@ -56,9 +88,18 @@ async function send(text: string) {
             ugc
           </span>
         </div>
-        <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-[#0a0a0a]/55">
-          pitch in · reel out
-        </span>
+        <div class="flex items-center gap-3">
+          <button
+            v-if="!isEmpty"
+            class="press rounded-[6px] border-2 border-[#0a0a0a] bg-white px-2 py-1 font-mono text-[10px] font-bold uppercase shadow-[2px_2px_0_0_#0a0a0a]"
+            @click="clearChat"
+          >
+            new
+          </button>
+          <span class="hidden font-mono text-[10px] uppercase tracking-[0.2em] text-[#0a0a0a]/55 sm:inline">
+            pitch in · reel out
+          </span>
+        </div>
       </div>
     </header>
 

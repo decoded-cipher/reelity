@@ -1,13 +1,35 @@
+import { nanoid } from "nanoid";
 import type { Job } from "./types";
 import { renderJob } from "./ffmpeg";
 
 export type SendResult = { kind: "reply"; text: string } | { kind: "job"; job: Job };
 
+const SESSION_KEY = "reelity.session.v1";
+
+function sessionId(): string {
+  try {
+    let s = localStorage.getItem(SESSION_KEY);
+    if (!s) {
+      s = nanoid();
+      localStorage.setItem(SESSION_KEY, s);
+    }
+    return s;
+  } catch {
+    return "anon";
+  }
+}
+
+export function resetSession(): void {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+  } catch {}
+}
+
 export async function send(message: string, onStep?: (job: Job) => void): Promise<SendResult> {
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, sessionId: sessionId() }),
   });
   if (!res.ok) throw new Error(`request failed (${res.status})`);
   const data = (await res.json()) as SendResult;

@@ -1,9 +1,10 @@
 import { Hono } from "hono";
 import { nanoid } from "nanoid";
 import type { Job, ResolvedAssets } from "../src/lib/types";
-import { buildSpec } from "./brain";
+import { brainProvider, buildSpec } from "./brain";
 import { route } from "./converse";
 import { resolveAssets } from "./assets";
+import { insertGeneration, listHistory, setVideoUrl } from "./db";
 import { normalizeUrl, scrapeSite } from "./scrape";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -11,20 +12,52 @@ const app = new Hono<{ Bindings: Env }>();
 app.get("/api/health", (c) => c.json({ ok: true }));
 
 app.post("/api/chat", async (c) => {
-  const { message } = await c.req.json<{ message?: string }>();
-  if (!message?.trim()) return c.json({ error: "message required" }, 400);
-  const text = message.trim();
+  const body = await c.req.json<{ message?: string; sessionId?: string }>();
+  if (!body.message?.trim()) return c.json({ error: "message required" }, 400);
+  const text = body.message.trim();
+  const sessionId = body.sessionId;
+  const log = (p: Promise<unknown>) => c.executionCtx.waitUntil(p.catch(() => {}));
 
   const decision = await route(c.env, text);
-  if (decision.action === "chat") return c.json({ kind: "reply", text: decision.reply });
+  if (decision.action === "chat") {
+    log(
+      insertGeneration(c.env.DB, {
+        id: nanoid(),
+        sessionId,
+        prompt: text,
+        action: "chat",
+        reply: decision.reply,
+        model: brainProvider(c.env),
+      }),
+    );
+    return c.json({ kind: "reply", text: decision.reply });
+  }
 
   const url = normalizeUrl(text);
   const site = url ? await scrapeSite(url) : null;
-  const spec = await buildSpec(c.env, text, site);
+  const { spec, source } = await buildSpec(c.env, text, site);
   const assets = await resolveAssets(c.env, spec, site);
+  const id = nanoid();
+
+  log(
+    insertGeneration(c.env.DB, {
+      id,
+      sessionId,
+      prompt: text,
+      action: "generate",
+      format: spec.format,
+      productName: spec.productName,
+      siteUrl: spec.siteUrl,
+      concept: spec.concept,
+      caption: spec.caption,
+      spec,
+      assets,
+      model: source,
+    }),
+  );
 
   const job: Job = {
-    id: nanoid(),
+    id,
     status: "done",
     progress: 100,
     spec,
@@ -32,6 +65,15 @@ app.post("/api/chat", async (c) => {
     concept: spec.concept,
   };
   return c.json({ kind: "job", job });
+});
+
+app.get("/api/history", async (c) => {
+  try {
+    const items = await listHistory(c.env.DB, c.req.query("session") ?? null);
+    return c.json({ items });
+  } catch {
+    return c.json({ items: [] });
+  }
 });
 
 const ALLOWED = ["pexels.com", "giphy.com", "jamendo.com", "picsum.photos", "wikimedia.org", "openverse.org"];
@@ -72,6 +114,9 @@ app.put("/api/videos/:key", async (c) => {
   if (!/^[A-Za-z0-9_-]+\.mp4$/.test(key)) return c.text("bad key", 400);
   if (!c.req.raw.body) return c.text("no body", 400);
   await c.env.VIDEOS.put(key, c.req.raw.body, { httpMetadata: { contentType: "video/mp4" } });
+  c.executionCtx.waitUntil(
+    setVideoUrl(c.env.DB, key.replace(/\.mp4$/, ""), `/v/${key}`).catch(() => {}),
+  );
   return c.json({ url: `/v/${key}` });
 });
 

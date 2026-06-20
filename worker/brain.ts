@@ -10,11 +10,24 @@ const DEFAULTS = {
   workersAi: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
 };
 
+export interface SpecResult {
+  spec: RenderSpec;
+  source: string;
+}
+
+export function brainProvider(env: Env): "anthropic" | "google" | "workers-ai" {
+  const want = env.BRAIN_PROVIDER?.toLowerCase();
+  if (want === "anthropic" || want === "google") return want;
+  if (env.ANTHROPIC_API_KEY) return "anthropic";
+  if (env.GOOGLE_GENERATIVE_AI_API_KEY) return "google";
+  return "workers-ai";
+}
+
 export async function buildSpec(
   env: Env,
   message: string,
   site: SiteContext | null,
-): Promise<RenderSpec> {
+): Promise<SpecResult> {
   const { system, user } = buildPrompt(message, site);
   try {
     const model = sdkModel(env);
@@ -31,9 +44,9 @@ export async function buildSpec(
         ).text
       : await workersAi(env, system, user);
     const spec = coerceSpec(raw, message, site);
-    if (spec) return spec;
+    if (spec) return { spec, source: brainProvider(env) };
   } catch {}
-  return heuristicSpec(message, site);
+  return { spec: heuristicSpec(message, site), source: "heuristic" };
 }
 
 export function sdkModel(env: Env): LanguageModel | null {

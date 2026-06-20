@@ -17,6 +17,13 @@
       "bucket_name": "reelity-videos"
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "reelity",
+      "database_id": "6634ddf3-af62-49f8-ae96-c0a1df8f608a"
+    }
+  ],
   "observability": {
     "enabled": true
   }
