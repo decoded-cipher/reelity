@@ -6,7 +6,7 @@ const W = 720;
 const H = 1280;
 const FPS = 30;
 const DUR = 8;
-const CORE_SOURCES = ["/ffmpeg", "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd"];
+const CORE_SOURCES = ["/ffmpeg", "https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm"];
 
 let instance: FFmpeg | null = null;
 let loading: Promise<FFmpeg> | null = null;
