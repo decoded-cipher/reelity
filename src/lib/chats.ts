@@ -8,13 +8,19 @@ export function chatIdFromPath(): string | null {
 
 export const newChatId = (): string => nanoid();
 
-export async function fetchChat(id: string): Promise<ChatMessage[]> {
+export interface ChatLoad {
+  status: "ok" | "not-found" | "error";
+  messages: ChatMessage[];
+}
+
+export async function fetchChat(id: string): Promise<ChatLoad> {
   try {
     const res = await fetch(`/api/thread/${id}`);
-    if (!res.ok) return [];
+    if (res.status === 404) return { status: "not-found", messages: [] };
+    if (!res.ok) return { status: "error", messages: [] };
     const data = (await res.json()) as { messages?: ChatMessage[] };
-    return (data.messages ?? []).map((m) => ({ ...m, pending: false }));
+    return { status: "ok", messages: (data.messages ?? []).map((m) => ({ ...m, pending: false })) };
   } catch {
-    return [];
+    return { status: "error", messages: [] };
   }
 }

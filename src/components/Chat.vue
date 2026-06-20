@@ -20,10 +20,14 @@ async function openFromUrl() {
   messages.value = [];
   updateTitle();
   if (!id) return;
-  const remote = await fetchChat(id);
-  if (chatId.value === id) {
-    messages.value = remote;
+  const res = await fetchChat(id);
+  if (chatId.value !== id) return;
+  if (res.status === "ok") {
+    messages.value = res.messages;
     updateTitle();
+  } else {
+    history.replaceState({}, "", "/");
+    chatId.value = null;
   }
 }
 

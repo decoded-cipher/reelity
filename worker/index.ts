@@ -116,9 +116,10 @@ async function verifyTurnstile(
 app.get("/api/thread/:session", async (c) => {
   try {
     const rows = await getThread(c.env.DB, c.req.param("session"));
+    if (!rows.length) return c.json({ error: "not found" }, 404);
     return c.json({ messages: rows.flatMap(rebuildTurn) });
   } catch {
-    return c.json({ messages: [] });
+    return c.json({ error: "thread lookup failed" }, 500);
   }
 });
 
