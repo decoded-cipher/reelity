@@ -48,7 +48,8 @@ onUnmounted(() => io?.disconnect());
     :class="{ 'col-span-2': showDetails }"
   >
     <div class="flex gap-3">
-      <div class="flex min-w-0 flex-1 flex-col">
+      <!-- when open, pin the video column to a collapsed card's width so the card height never grows -->
+      <div class="flex min-w-0 flex-col" :class="showDetails ? 'w-[calc(50%_-_22px)] shrink-0' : 'flex-1'">
         <div class="relative aspect-[9/16] w-full overflow-hidden rounded-[8px] border-2 border-[#0a0a0a] bg-black">
           <video
             ref="videoEl"

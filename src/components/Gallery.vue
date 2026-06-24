@@ -1,9 +1,32 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import type { GalleryItem } from "../lib/types";
+import { ref, onMounted, onUnmounted } from "vue";
+import type { GalleryItem, Job } from "../lib/types";
 import { fetchGallery } from "../lib/gallery";
 import { navigate } from "../lib/router";
 import GalleryCard from "./GalleryCard.vue";
+import VideoCard from "./VideoCard.vue";
+
+const mql = window.matchMedia("(max-width: 639px)");
+const isMobile = ref(mql.matches);
+const onMq = (e: MediaQueryListEvent) => (isMobile.value = e.matches);
+
+// mobile reuses the chat VideoCard, so map a gallery item into a finished Job
+function toJob(item: GalleryItem): Job {
+  return {
+    id: item.id,
+    status: "done",
+    progress: 100,
+    spec: item.spec ?? undefined,
+    videoUrl: item.videoUrl,
+    model: item.model ?? undefined,
+    concept: item.concept ?? undefined,
+    assets: {
+      background: { kind: "image", url: item.poster ?? undefined, poster: item.poster ?? undefined, source: "pexels" },
+      gif: null,
+      audio: item.audioTitle ? { url: "", title: item.audioTitle, vibe: item.spec?.audioVibe ?? "" } : null,
+    },
+  };
+}
 
 const PAGE = 24;
 const items = ref<GalleryItem[]>([]);
@@ -23,8 +46,11 @@ async function loadMore() {
 
 onMounted(() => {
   document.title = "Gallery · Reelity";
+  mql.addEventListener("change", onMq);
   loadMore();
 });
+
+onUnmounted(() => mql.removeEventListener("change", onMq));
 </script>
 
 <template>
@@ -59,9 +85,14 @@ onMounted(() => {
     </header>
 
     <main class="mx-auto max-w-6xl px-5 py-6">
-      <div v-if="items.length" class="grid grid-cols-2 items-start gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        <GalleryCard v-for="it in items" :key="it.id" :item="it" />
-      </div>
+      <template v-if="items.length">
+        <div v-if="isMobile" class="flex flex-col items-center gap-4">
+          <VideoCard v-for="it in items" :key="it.id" :job="toJob(it)" :show-regenerate="false" />
+        </div>
+        <div v-else class="grid grid-cols-3 items-start gap-4 lg:grid-cols-4">
+          <GalleryCard v-for="it in items" :key="it.id" :item="it" />
+        </div>
+      </template>
 
       <p v-else-if="loaded" class="mx-auto max-w-md pt-24 text-center font-mono text-sm text-[#0a0a0a]/60">
         No reels yet — be the first to make one.

@@ -4,7 +4,9 @@ import type { Job } from "../lib/types";
 import { downloadVideo } from "../lib/share";
 import ShareModal from "./ShareModal.vue";
 
-const props = defineProps<{ job: Job }>();
+const props = withDefaults(defineProps<{ job: Job; showRegenerate?: boolean }>(), {
+  showRegenerate: true,
+});
 const emit = defineEmits<{ remix: [] }>();
 
 const spec = computed(() => props.job.spec);
@@ -130,7 +132,7 @@ function download() {
             </svg>
             download
           </button>
-          <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          <div class="grid gap-1.5" :class="showRegenerate ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'">
             <button
               class="press flex items-center justify-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-white px-2 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
               @click="showShare = true"
@@ -143,6 +145,7 @@ function download() {
               share
             </button>
             <button
+              v-if="showRegenerate"
               class="press flex items-center justify-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-white px-2 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
               @click="emit('remix')"
             >
