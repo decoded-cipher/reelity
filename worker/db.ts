@@ -88,7 +88,7 @@ export async function listGallery(db: D1Database, limit = 24, offset = 0): Promi
       `SELECT id, product_name, concept, caption, format, model, spec, assets, video_url, created_at
        FROM generations
        WHERE action = 'generate' AND video_url IS NOT NULL
-       ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+       ORDER BY product_name COLLATE NOCASE ASC LIMIT ? OFFSET ?`,
     )
     .bind(limit, offset)
     .all<GalleryRow>();

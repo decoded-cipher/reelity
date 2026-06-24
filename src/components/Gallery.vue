@@ -59,7 +59,7 @@ onMounted(() => {
     </header>
 
     <main class="mx-auto max-w-6xl px-5 py-6">
-      <div v-if="items.length" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <div v-if="items.length" class="grid grid-cols-2 items-start gap-4 sm:grid-cols-3 lg:grid-cols-4">
         <GalleryCard v-for="it in items" :key="it.id" :item="it" />
       </div>
 
