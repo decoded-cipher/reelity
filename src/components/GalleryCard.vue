@@ -77,7 +77,7 @@ onUnmounted(() => io?.disconnect());
     :class="{ 'col-span-2': showDetails }"
   >
     <div class="flex gap-3">
-      <!-- when open, pin the video column to a collapsed card's width so the card height never grows -->
+      <!-- when open, pin the video column to a collapsed card's width so it doesn't grow -->
       <div class="flex min-w-0 flex-col" :class="showDetails ? 'w-[calc(50%_-_22px)] shrink-0' : 'flex-1'">
         <div class="relative aspect-[9/16] w-full overflow-hidden rounded-[8px] border-2 border-[#0a0a0a] bg-black">
           <video
@@ -112,14 +112,14 @@ onUnmounted(() => io?.disconnect());
         </button>
       </div>
 
-      <div v-if="showDetails" class="min-w-0 flex-1 space-y-2">
+      <div v-if="showDetails" class="flex min-w-0 flex-1 flex-col">
         <div class="space-y-1 rounded-[7px] border-2 border-[#0a0a0a] bg-[#f5f2e9] p-2.5">
           <div v-for="d in details" :key="d.k" class="flex gap-2 text-[12px]">
             <span class="w-20 shrink-0 font-mono font-bold uppercase text-[#0a0a0a]/45">{{ d.k }}</span>
             <span class="min-w-0 flex-1 break-words text-[#0a0a0a]/85">{{ d.v }}</span>
           </div>
         </div>
-        <div class="space-y-1.5">
+        <div class="mt-auto space-y-1.5 pt-2">
           <button
             class="press flex w-full items-center justify-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-[#c6f000] px-2 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
             @click="download"
