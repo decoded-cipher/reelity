@@ -1,11 +1,40 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import type { GalleryItem } from "../lib/types";
+import { downloadVideo } from "../lib/share";
+import ShareModal from "./ShareModal.vue";
 
 const props = defineProps<{ item: GalleryItem }>();
 
 const accent = computed(() => props.item.spec?.accentColor ?? "#a855f7");
 const showDetails = ref(false);
+const showShare = ref(false);
+const copied = ref(false);
+
+const product = computed(() => props.item.productName ?? props.item.spec?.productName ?? "reelity");
+const slug = computed(() => product.value.toLowerCase().replace(/[^a-z0-9]/g, "") || "reelity");
+const downloadName = computed(() => `${slug.value}-reel.mp4`);
+const shareUrl = computed(() =>
+  props.item.videoUrl.startsWith("http") ? props.item.videoUrl : `${location.origin}${props.item.videoUrl}`,
+);
+const shareText = computed(() => {
+  const cap = props.item.caption?.trim();
+  return cap
+    ? `${cap} — ${product.value}'s UGC reel, made in one message with Reelity 🎬`
+    : `${product.value}'s UGC reel, made in one message with Reelity 🎬`;
+});
+
+async function copy() {
+  try {
+    await navigator.clipboard.writeText(shareUrl.value);
+    copied.value = true;
+    setTimeout(() => (copied.value = false), 1400);
+  } catch {}
+}
+
+function download() {
+  downloadVideo(shareUrl.value, downloadName.value);
+}
 
 const details = computed(() => {
   const s = props.item.spec;
@@ -74,6 +103,40 @@ onUnmounted(() => io?.disconnect());
           {{ item.caption }}
         </p>
 
+        <div class="mt-2 space-y-1.5">
+          <button
+            class="press flex w-full items-center justify-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-[#c6f000] px-2 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
+            @click="download"
+          >
+            <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            download
+          </button>
+          <button
+            class="press flex w-full items-center justify-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-white px-2 py-1.5 text-xs font-bold shadow-[2px_2px_0_0_#0a0a0a]"
+            @click="showShare = true"
+          >
+            <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+            share
+          </button>
+          <div class="flex items-center gap-1.5 rounded-[8px] border-2 border-[#0a0a0a] bg-[#f5f2e9] px-2 py-1">
+            <span class="truncate font-mono text-[10px] text-[#0a0a0a]/70">{{ shareUrl }}</span>
+            <button
+              class="press ml-auto shrink-0 rounded-[5px] border-2 border-[#0a0a0a] bg-white px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase shadow-[2px_2px_0_0_#0a0a0a]"
+              @click="copy"
+            >
+              {{ copied ? "ok!" : "copy" }}
+            </button>
+          </div>
+        </div>
+
         <button
           class="mt-2 flex w-full items-center justify-between font-mono text-[11px] font-bold uppercase tracking-wider text-[#0a0a0a]/60"
           @click="showDetails = !showDetails"
@@ -92,5 +155,14 @@ onUnmounted(() => io?.disconnect());
         </div>
       </div>
     </div>
+
+    <ShareModal
+      v-if="showShare"
+      :url="shareUrl"
+      :text="shareText"
+      :title="`${product} reel`"
+      :download-name="downloadName"
+      @close="showShare = false"
+    />
   </div>
 </template>
