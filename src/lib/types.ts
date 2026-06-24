@@ -74,3 +74,17 @@ export interface ChatMessage {
   pending?: boolean;
   createdAt: number;
 }
+
+export interface GalleryItem {
+  id: string;
+  productName: string | null;
+  concept: string | null;
+  caption: string | null;
+  format: VideoFormat | null;
+  model: string | null;
+  videoUrl: string;
+  poster: string | null;
+  audioTitle: string | null;
+  spec: RenderSpec | null;
+  createdAt: number;
+}

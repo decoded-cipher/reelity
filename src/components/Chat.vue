@@ -6,6 +6,7 @@ import { send as sendMessage } from "../lib/api";
 import { preloadFFmpeg } from "../lib/ffmpeg";
 import { initTurnstile } from "../lib/turnstile";
 import { chatIdFromPath, newChatId, fetchChat } from "../lib/chats";
+import { navigate } from "../lib/router";
 import MessageList from "./MessageList.vue";
 import Composer from "./Composer.vue";
 
@@ -128,6 +129,20 @@ async function send(text: string) {
             </svg>
             new chat
           </button>
+          <a
+            href="/gallery"
+            aria-label="Browse the gallery"
+            title="Gallery"
+            class="press flex h-9 w-9 items-center justify-center rounded-[8px] border-2 border-[#0a0a0a] bg-white shadow-[2px_2px_0_0_#0a0a0a]"
+            @click.prevent="navigate('/gallery')"
+          >
+            <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="#0a0a0a" stroke-width="2.2">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+          </a>
           <a
             href="https://github.com/decoded-cipher/reelity"
             target="_blank"

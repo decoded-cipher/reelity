@@ -68,3 +68,29 @@ export async function getThread(db: D1Database, sessionId: string, limit = 100):
     .all<ThreadRow>();
   return results;
 }
+
+export interface GalleryRow {
+  id: string;
+  product_name: string | null;
+  concept: string | null;
+  caption: string | null;
+  format: string | null;
+  model: string | null;
+  spec: string | null;
+  assets: string | null;
+  video_url: string;
+  created_at: number;
+}
+
+export async function listGallery(db: D1Database, limit = 24, offset = 0): Promise<GalleryRow[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT id, product_name, concept, caption, format, model, spec, assets, video_url, created_at
+       FROM generations
+       WHERE action = 'generate' AND video_url IS NOT NULL
+       ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    )
+    .bind(limit, offset)
+    .all<GalleryRow>();
+  return results;
+}

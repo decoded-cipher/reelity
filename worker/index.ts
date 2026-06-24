@@ -4,7 +4,7 @@ import type { ChatMessage, ChatTurn, Job, RenderSpec, ResolvedAssets } from "../
 import { brainProvider, buildSpec } from "./brain";
 import { route } from "./converse";
 import { resolveAssets } from "./assets";
-import { getThread, insertGeneration, setVideoUrl, type ThreadRow } from "./db";
+import { getThread, insertGeneration, listGallery, setVideoUrl, type ThreadRow } from "./db";
 import { normalizeUrl, scrapeSite } from "./scrape";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -164,6 +164,34 @@ function proxify(a: ResolvedAssets): ResolvedAssets {
     audio: a.audio ? { ...a.audio, url: proxyUrl(a.audio.url)! } : null,
   };
 }
+
+// public showcase: curated AI output only (no raw prompts), completed reels newest-first
+app.get("/api/gallery", async (c) => {
+  try {
+    const limit = Math.min(Math.max(Number(c.req.query("limit")) || 24, 1), 60);
+    const offset = Math.max(Number(c.req.query("offset")) || 0, 0);
+    const rows = await listGallery(c.env.DB, limit, offset);
+    const items = rows.map((r) => {
+      const assets = parseJson<ResolvedAssets>(r.assets);
+      return {
+        id: r.id,
+        productName: r.product_name,
+        concept: r.concept,
+        caption: r.caption,
+        format: r.format,
+        model: r.model,
+        videoUrl: r.video_url,
+        poster: proxyUrl(assets?.background.poster) ?? null,
+        audioTitle: assets?.audio?.title ?? null,
+        spec: parseJson<RenderSpec>(r.spec),
+        createdAt: r.created_at,
+      };
+    });
+    return c.json({ items });
+  } catch {
+    return c.json({ items: [] });
+  }
+});
 
 app.get("/api/asset", rateLimit((e) => e.ASSET_RL), async (c) => {
   const u = c.req.query("u");
